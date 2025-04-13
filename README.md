@@ -24,7 +24,7 @@ A modern web application that automatically posts AI-related news updates to you
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/linkedin-ai-news.git
+git clone https://github.com/hazzler78/linkedin-ai-news.git
 cd linkedin-ai-news
 ```
 
@@ -64,6 +64,20 @@ python app.py
    - Posting schedule
    - Content filters
    - Notification settings
+
+## Landing Page
+
+The project includes a modern landing page with:
+
+- Responsive design
+- Interactive chatbot
+- Feature highlights
+- How it works section
+- Pricing plans
+- Newsletter subscription
+- Contact form
+
+Visit the landing page at: [https://hazzler78.github.io/linkedin-ai-news/](https://hazzler78.github.io/linkedin-ai-news/)
 
 ## Development
 
@@ -123,7 +137,7 @@ For support, email support@linkedinainews.com or join our [Discord community](ht
 
 ## Authors
 
-- Your Name - Initial work - [YourGitHub](https://github.com/yourusername)
+- Mikael Söderberg - Initial work - [hazzler78](https://github.com/hazzler78)
 
 ## Version History
 
