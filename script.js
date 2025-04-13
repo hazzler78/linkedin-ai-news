@@ -66,6 +66,59 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const chatToggle = document.querySelector('.chat-toggle-button');
+    const chatbotContainer = document.querySelector('.chatbot-container');
+    const chatbotClose = document.querySelector('.chatbot-toggle');
+    const chatInput = document.querySelector('.chatbot-input input');
+    const sendButton = document.querySelector('.send-button');
+    const messagesContainer = document.querySelector('.chatbot-messages');
+
+    // Toggle chatbot visibility
+    chatToggle.addEventListener('click', () => {
+        chatbotContainer.classList.add('open');
+        chatToggle.style.display = 'none';
+    });
+
+    chatbotClose.addEventListener('click', () => {
+        chatbotContainer.classList.remove('open');
+        chatToggle.style.display = 'flex';
+    });
+
+    // Handle sending messages
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (message) {
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            // Simulate bot response (replace with actual AI integration)
+            setTimeout(() => {
+                const botResponse = "I'm your AI assistant. I'm here to help you with any questions about our LinkedIn AI News Poster service.";
+                addMessage(botResponse, 'bot');
+            }, 1000);
+        }
+    }
+
+    // Add message to chat
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chatbot-message', `${sender}-message`);
+        messageDiv.innerHTML = `<p>${text}</p>`;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Send message on button click
+    sendButton.addEventListener('click', sendMessage);
+
+    // Send message on Enter key
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
 });
 
 // Helper function to show form messages
