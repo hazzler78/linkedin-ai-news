@@ -1,0 +1,210 @@
+// Form submission handling
+document.addEventListener('DOMContentLoaded', function() {
+    // Newsletter form
+    const newsletterForm = document.querySelector('.newsletter form');
+    if (newsletterForm) {
+        newsletterForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const emailInput = this.querySelector('input[type="email"]');
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                showFormMessage(this, 'Please enter your email address', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://formspree.io/f/xblgwqlg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (response.ok) {
+                    showFormMessage(this, 'Thank you for subscribing!', 'success');
+                    emailInput.value = '';
+                } else {
+                    throw new Error('Failed to subscribe');
+                }
+            } catch (error) {
+                showFormMessage(this, 'An error occurred. Please try again later.', 'error');
+                console.error('Newsletter subscription error:', error);
+            }
+        });
+    }
+    
+    // Contact form
+    const contactForm = document.getElementById('contact-form');
+    if (contactForm) {
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('https://formspree.io/f/xblgwqlg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showFormMessage(this, 'Thank you for your message! We\'ll get back to you soon.', 'success');
+                    this.reset();
+                } else {
+                    throw new Error('Failed to send message');
+                }
+            } catch (error) {
+                showFormMessage(this, 'An error occurred. Please try again later.', 'error');
+                console.error('Contact form submission error:', error);
+            }
+        });
+    }
+});
+
+// Helper function to show form messages
+function showFormMessage(form, message, type) {
+    let messageElement = form.querySelector('.form-message');
+    
+    if (!messageElement) {
+        messageElement = document.createElement('div');
+        messageElement.className = 'form-message';
+        form.appendChild(messageElement);
+    }
+    
+    messageElement.textContent = message;
+    messageElement.className = `form-message ${type}`;
+    
+    // Remove message after 5 seconds
+    setTimeout(() => {
+        messageElement.remove();
+    }, 5000);
+}
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Mobile menu toggle
+const mobileMenuButton = document.querySelector('.mobile-menu-button');
+const nav = document.querySelector('nav ul');
+
+if (mobileMenuButton && nav) {
+    mobileMenuButton.addEventListener('click', function() {
+        nav.classList.toggle('show');
+        this.classList.toggle('active');
+    });
+}
+
+// Intersection Observer for fade-in animations
+const fadeElements = document.querySelectorAll('.fade-in');
+const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            fadeObserver.unobserve(entry.target);
+        }
+    });
+}, {
+    threshold: 0.1
+});
+
+fadeElements.forEach(element => {
+    fadeObserver.observe(element);
+});
+
+// Pricing toggle
+const pricingToggle = document.querySelector('.pricing-toggle');
+const pricingCards = document.querySelectorAll('.pricing-card');
+
+if (pricingToggle && pricingCards.length > 0) {
+    pricingToggle.addEventListener('change', function() {
+        const isAnnual = this.checked;
+        
+        pricingCards.forEach(card => {
+            const monthlyPrice = card.getAttribute('data-monthly');
+            const annualPrice = card.getAttribute('data-annual');
+            
+            const priceElement = card.querySelector('.price');
+            if (priceElement) {
+                priceElement.innerHTML = isAnnual ? 
+                    `$${annualPrice}<span>/year</span>` : 
+                    `$${monthlyPrice}<span>/month</span>`;
+            }
+        });
+    });
+}
+
+// Form validation
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function validateForm(form) {
+    let isValid = true;
+    const emailInputs = form.querySelectorAll('input[type="email"]');
+    
+    emailInputs.forEach(input => {
+        if (!validateEmail(input.value.trim())) {
+            showFormMessage(form, 'Please enter a valid email address', 'error');
+            isValid = false;
+        }
+    });
+    
+    return isValid;
+}
+
+// Add loading state to buttons
+function setLoadingState(button, isLoading) {
+    if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner"></span> Sending...';
+    } else {
+        button.disabled = false;
+        button.innerHTML = button.getAttribute('data-original-text') || 'Submit';
+    }
+}
+
+// Initialize tooltips
+const tooltips = document.querySelectorAll('[data-tooltip]');
+tooltips.forEach(element => {
+    element.addEventListener('mouseenter', function() {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = this.getAttribute('data-tooltip');
+        
+        document.body.appendChild(tooltip);
+        
+        const rect = this.getBoundingClientRect();
+        tooltip.style.top = `${rect.top - tooltip.offsetHeight - 5}px`;
+        tooltip.style.left = `${rect.left + (rect.width - tooltip.offsetWidth) / 2}px`;
+    });
+    
+    element.addEventListener('mouseleave', function() {
+        const tooltip = document.querySelector('.tooltip');
+        if (tooltip) {
+            tooltip.remove();
+        }
+    });
+}); 
