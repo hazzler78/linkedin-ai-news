@@ -655,6 +655,15 @@ footer {
     line-height: 1.4;
 }
 
+.chatbot-message p {
+    margin: 0 0 5px 0;
+    line-height: 1.4;
+}
+
+.chatbot-message p:last-child {
+    margin-bottom: 0;
+}
+
 .user-message {
     background: var(--primary-color);
     color: var(--white);

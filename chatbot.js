@@ -72,7 +72,21 @@ class Chatbot {
     addMessage(text, sender) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chatbot-message ${sender}-message`;
-        messageDiv.textContent = text;
+        
+        // Handle newlines in the text
+        if (text.includes('\n')) {
+            const lines = text.split('\n');
+            lines.forEach((line, index) => {
+                if (line.trim()) {
+                    const p = document.createElement('p');
+                    p.textContent = line;
+                    messageDiv.appendChild(p);
+                }
+            });
+        } else {
+            messageDiv.textContent = text;
+        }
+        
         this.messagesContainer.appendChild(messageDiv);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
