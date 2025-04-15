@@ -1,5 +1,7 @@
 // Form submission handling
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Script loaded and running');
+    
     // Newsletter form
     const newsletterForm = document.querySelector('.newsletter form');
     if (newsletterForm) {
@@ -77,11 +79,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggle chatbot visibility
     chatToggle.addEventListener('click', () => {
+        console.log('Chat toggle clicked');
         chatbotContainer.classList.add('open');
         chatToggle.style.display = 'none';
     });
 
     chatbotClose.addEventListener('click', () => {
+        console.log('Chat close clicked');
         chatbotContainer.classList.remove('open');
         chatToggle.style.display = 'flex';
     });

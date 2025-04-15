@@ -533,19 +533,20 @@ footer {
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: transform 0.3s ease, background-color 0.3s ease;
-    z-index: 1000;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+.chat-toggle-button i {
+    font-size: 24px;
+    color: white;
+}
+
 .chat-toggle-button:hover {
     transform: scale(1.1);
     background-color: #005582;
-}
-
-.chat-toggle-button i {
-    font-size: 24px;
 }
 
 .chatbot-container {
@@ -554,15 +555,16 @@ footer {
     right: 30px;
     width: 350px;
     height: 500px;
-    background: white;
+    background: #ffffff;
     border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     transform: translateY(100%);
     opacity: 0;
     transition: all 0.3s ease;
     z-index: 1000;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .chatbot-container.open {
@@ -583,6 +585,7 @@ footer {
 .chatbot-header h3 {
     margin: 0;
     font-size: 1.1rem;
+    font-weight: 600;
 }
 
 .chatbot-toggle {
@@ -593,6 +596,12 @@ footer {
     cursor: pointer;
     padding: 0;
     line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.chatbot-toggle:hover {
+    opacity: 1;
 }
 
 .chatbot-messages {
@@ -602,6 +611,7 @@ footer {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    background: #f8f9fa;
 }
 
 .chatbot-message {
@@ -610,6 +620,7 @@ footer {
     border-radius: 15px;
     font-size: 0.95rem;
     line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .user-message {
@@ -620,10 +631,11 @@ footer {
 }
 
 .bot-message {
-    background: #f0f2f5;
+    background: white;
     color: #333;
     align-self: flex-start;
     border-bottom-left-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .chatbot-input {
@@ -631,6 +643,8 @@ footer {
     border-top: 1px solid #eee;
     display: flex;
     gap: 10px;
+    background: white;
+    border-radius: 0 0 15px 15px;
 }
 
 .chatbot-input input {
@@ -645,6 +659,7 @@ footer {
 
 .chatbot-input input:focus {
     border-color: #0077b5;
+    box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.1);
 }
 
 .send-button {
@@ -658,15 +673,18 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .send-button:hover {
     background: #005582;
+    transform: scale(1.05);
 }
 
 .send-button i {
     font-size: 1rem;
+    color: white;
 }
 
 /* Typing indicator */
@@ -674,18 +692,20 @@ footer {
     display: flex;
     gap: 5px;
     padding: 10px 15px;
-    background: #f0f2f5;
+    background: white;
     border-radius: 15px;
     align-self: flex-start;
     margin: 5px 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .typing-indicator span {
     width: 8px;
     height: 8px;
-    background: #666;
+    background: #0077b5;
     border-radius: 50%;
     animation: typing 1s infinite ease-in-out;
+    opacity: 0.6;
 }
 
 .typing-indicator span:nth-child(2) {
@@ -711,6 +731,7 @@ footer {
         width: calc(100% - 40px);
         height: 60vh;
         bottom: 80px;
+        right: 20px;
     }
     
     .chat-toggle-button {
