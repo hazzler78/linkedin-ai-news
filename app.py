@@ -9,7 +9,7 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
 
 # Serve static files
@@ -19,10 +19,18 @@ def serve_index():
 
 @app.route('/<path:path>')
 def serve_static(path):
+    # First try to serve from static folder
+    static_path = os.path.join('static', path)
+    if os.path.exists(static_path):
+        return send_from_directory('static', path)
+    
+    # Then try to serve from root
     if os.path.exists(path):
         directory = os.path.dirname(path) or '.'
         filename = os.path.basename(path)
         return send_from_directory(directory, filename)
+    
+    # Finally, try to serve from root as fallback
     return send_from_directory('.', path)
 
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
