@@ -30,6 +30,9 @@ def chat():
         data = request.json
         user_message = data.get('message', '')
         
+        if not DEEPSEEK_API_KEY:
+            return jsonify({'error': 'DeepSeek API key is not configured'}), 500
+        
         # Prepare the prompt for Deepseek
         prompt = f"""You are an AI assistant for LinkedIn AI News Poster, a service that helps professionals stay updated with AI news.
         Be helpful, professional, and concise in your responses.
@@ -61,18 +64,27 @@ def chat():
         }
         
         response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
+            'https://api.deepseek.ai/v1/chat/completions',
             json=data,
             headers=headers
         )
         
         if response.status_code == 200:
-            ai_response = response.json()['choices'][0]['message']['content']
-            return jsonify({'response': ai_response})
+            try:
+                response_data = response.json()
+                ai_response = response_data['choices'][0]['message']['content']
+                return jsonify({'response': ai_response})
+            except (KeyError, IndexError) as e:
+                print(f"Error parsing DeepSeek response: {str(e)}")
+                print(f"Response content: {response.text}")
+                return jsonify({'error': 'Failed to parse AI response'}), 500
         else:
-            return jsonify({'error': 'Failed to get response from AI'}), 500
+            print(f"DeepSeek API error: {response.status_code}")
+            print(f"Response content: {response.text}")
+            return jsonify({'error': f'Failed to get response from AI (Status: {response.status_code})'}), 500
             
     except Exception as e:
+        print(f"Chat endpoint error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
