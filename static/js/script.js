@@ -39,99 +39,121 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Registration form handling
-    const registrationFormElement = document.getElementById('chatRegistrationForm');
-    registrationFormElement.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const nameInput = document.getElementById('regName');
-        const emailInput = document.getElementById('regEmail');
-        
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: nameInput.value,
-                    email: emailInput.value
-                }),
-            });
+    // Add registration form HTML dynamically
+    function addRegistrationForm() {
+        const chatMessages = document.getElementById('chat-messages');
+        const registrationForm = document.createElement('div');
+        registrationForm.className = 'registration-form';
+        registrationForm.innerHTML = `
+            <h3>Welcome to LinkedIn AI News Poster</h3>
+            <p>Please register to start chatting:</p>
+            <form id="registration-form">
+                <input type="text" id="reg-name" placeholder="Your Name" required>
+                <input type="email" id="reg-email" placeholder="Your Email" required>
+                <button type="submit">Register</button>
+            </form>
+        `;
+        chatMessages.appendChild(registrationForm);
 
-            const data = await response.json();
-            
-            if (response.ok) {
-                // Store email for future use
-                localStorage.setItem('userEmail', emailInput.value);
-                userEmail = emailInput.value;
-                
-                // Hide registration form and show chat
-                registrationForm.classList.add('hidden');
-                chatInputContainer.style.display = 'flex';
-                chatMessages.style.display = 'flex';
-                
-                // Add welcome message
-                addMessage('bot', 'Thank you for registering! How can I help you today?');
-            } else {
-                alert(data.error || 'Registration failed. Please try again.');
+        // Handle registration form submission
+        document.getElementById('registration-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('userEmail', email);
+                    userEmail = email;
+                    registrationForm.remove();
+                    addMessage('Registration successful! How can I help you today?', 'bot');
+                } else {
+                    alert(data.error || 'Registration failed. Please try again.');
+                }
+            } catch (error) {
+                alert('Error during registration. Please try again.');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Registration failed. Please try again.');
+        });
+    }
+
+    // Initialize chat interface
+    function initializeChat() {
+        if (!userEmail) {
+            addRegistrationForm();
+        } else {
+            addMessage('Welcome back! How can I help you today?', 'bot');
         }
-    });
+    }
 
+    // Update sendMessage function
     async function sendMessage() {
-        if (isProcessing || !userEmail) return;
-
-        const message = chatInput.value.trim();
+        if (isProcessing) return;
+        
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
         if (!message) return;
+        
+        if (!userEmail) {
+            alert('Please register first to use the chat.');
+            return;
+        }
 
-        // Clear input
-        chatInput.value = '';
+        isProcessing = true;
+        messageInput.value = '';
 
         // Add user message
-        addMessage('user', message);
+        addMessage(message, 'user');
 
-        // Show typing indicator
-        isProcessing = true;
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message bot-message typing';
-        typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-        chatMessages.appendChild(typingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'message bot typing';
+        typingIndicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        document.getElementById('chat-messages').appendChild(typingIndicator);
 
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
-                    message,
+                    message: message,
                     email: userEmail
-                }),
+                })
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to get response');
-            }
+            // Remove typing indicator
+            typingIndicator.remove();
 
             const data = await response.json();
-            
-            // Remove typing indicator
-            typingDiv.remove();
-            
-            // Add bot message
-            addMessage('bot', data.response);
+            if (response.ok) {
+                addMessage(data.response, 'bot');
+            } else {
+                if (response.status === 401) {
+                    localStorage.removeItem('userEmail');
+                    userEmail = null;
+                    addRegistrationForm();
+                    addMessage('Your session has expired. Please register again.', 'bot');
+                } else {
+                    addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
+                }
+            }
         } catch (error) {
-            console.error('Error:', error);
-            typingDiv.remove();
-            addMessage('bot', 'Sorry, I encountered an error. Please try again.');
-        } finally {
-            isProcessing = false;
+            typingIndicator.remove();
+            addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
         }
+
+        isProcessing = false;
     }
 
     function addMessage(type, content) {
@@ -158,10 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add initial bot message if user is not registered
-    if (!userEmail) {
-        addMessage('bot', 'Welcome! Please register to start chatting with our AI News Assistant.');
-    }
+    // Initialize chat when the page loads
+    initializeChat();
 });
 
 // Newsletter form submission
