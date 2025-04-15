@@ -3,14 +3,15 @@ const config = {
         apiUrl: 'http://localhost:5000'
     },
     production: {
-        apiUrl: 'https://linkedin-ai-news-backend.onrender.com' // This will be your Render URL
+        apiUrl: 'https://linkedin-ai-news-backend.onrender.com'
     }
 };
 
-// Determine if we're on GitHub Pages
-const isGitHubPages = window.location.hostname.includes('github.io');
+// Determine if we're in production (either GitHub Pages or Render)
+const isProduction = window.location.hostname.includes('github.io') || 
+                    window.location.hostname.includes('onrender.com');
 
 // Export the appropriate configuration
-const currentConfig = isGitHubPages ? config.production : config.development;
+const currentConfig = isProduction ? config.production : config.development;
 
 export default currentConfig; 
