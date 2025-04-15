@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -6,6 +6,7 @@ import json
 import requests
 from datetime import datetime
 from database import Database
+from functools import wraps
 
 # Load environment variables
 load_dotenv()
@@ -14,6 +15,27 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
 
 db = Database()
+
+# Admin credentials (in production, use environment variables)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "admin123"
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
+def check_auth(username, password):
+    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
+
+def authenticate():
+    return ('Could not verify your access level for that URL.\n'
+            'You have to login with proper credentials', 401,
+            {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 # Serve static files
 @app.route('/')
@@ -127,6 +149,54 @@ def chat():
     except Exception as e:
         print(f"Chat endpoint error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/dashboard')
+@requires_auth
+def admin_dashboard():
+    users = db.get_all_users()
+    user_count = db.get_user_count()
+    
+    # Simple HTML template for the dashboard
+    dashboard_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Admin Dashboard - Registration Statistics</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .stats { background: #f5f5f5; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background: #f0f0f0; }
+            .count { font-size: 24px; font-weight: bold; color: #2196F3; }
+        </style>
+    </head>
+    <body>
+        <h1>Admin Dashboard</h1>
+        <div class="stats">
+            <h2>Total Registrations: <span class="count">{{ user_count }}</span></h2>
+        </div>
+        <h2>Recent Registrations</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Registration Date</th>
+            </tr>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+    </html>
+    """
+    return render_template_string(dashboard_html, users=users, user_count=user_count)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

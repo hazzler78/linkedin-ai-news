@@ -59,4 +59,28 @@ class Database:
         with sqlite3.connect(self.db_file) as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT 1 FROM users WHERE email = ?', (email,))
-            return cursor.fetchone() is not None 
+            return cursor.fetchone() is not None
+
+    def get_all_users(self) -> list:
+        """Get all registered users with their registration dates."""
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, name, email, created_at 
+                FROM users 
+                ORDER BY created_at DESC
+            ''')
+            results = cursor.fetchall()
+            return [{
+                'id': row[0],
+                'name': row[1],
+                'email': row[2],
+                'created_at': row[3]
+            } for row in results]
+
+    def get_user_count(self) -> int:
+        """Get the total number of registered users."""
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM users')
+            return cursor.fetchone()[0] 
