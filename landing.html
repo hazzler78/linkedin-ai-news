@@ -26,20 +26,8 @@
                 <h1>Automate Your LinkedIn Presence with AI</h1>
                 <p>Stay ahead of the curve with daily AI news updates and maintain an active professional presence.</p>
                 <div class="cta-buttons">
-                    <a href="#chat" class="button primary">Try Now</a>
+                    <a href="#" class="button primary" id="openChat">Try Now</a>
                     <a href="#features" class="button secondary">Learn More</a>
-                </div>
-            </div>
-        </section>
-
-        <section id="chat" class="chat-section">
-            <div class="chat-container">
-                <div class="chat-messages" id="chatMessages">
-                    <!-- Messages will be added here -->
-                </div>
-                <div class="chat-input-container">
-                    <textarea id="chatInput" placeholder="Type your message..." rows="1"></textarea>
-                    <button id="sendButton">Send</button>
                 </div>
             </div>
         </section>
@@ -174,6 +162,14 @@
             <button class="chatbot-toggle">
                 <i class="fas fa-times"></i>
             </button>
+        </div>
+        <div class="registration-form">
+            <h4>Register to Start Chatting</h4>
+            <form id="chatRegistrationForm">
+                <input type="text" id="regName" placeholder="Your Name" required>
+                <input type="email" id="regEmail" placeholder="Your Email" required>
+                <button type="submit" class="button primary">Register</button>
+            </form>
         </div>
         <div class="chatbot-messages"></div>
         <div class="chatbot-input">

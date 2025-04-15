@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 import json
 import requests
 from datetime import datetime
+from database import Database
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
+
+db = Database()
 
 # Serve static files
 @app.route('/')
@@ -33,6 +36,24 @@ def serve_static(path):
     # Finally, try to serve from root as fallback
     return send_from_directory('.', path)
 
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    name = data.get('name')
+    email = data.get('email')
+    
+    if not name or not email:
+        return jsonify({'error': 'Name and email are required'}), 400
+    
+    if db.user_exists(email):
+        return jsonify({'error': 'Email already registered'}), 409
+    
+    success = db.add_user(name, email)
+    if success:
+        return jsonify({'message': 'Registration successful'}), 201
+    else:
+        return jsonify({'error': 'Registration failed'}), 500
+
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 
 # Chatbot endpoint
@@ -41,6 +62,10 @@ def chat():
     try:
         data = request.json
         user_message = data.get('message', '')
+        email = data.get('email')
+        
+        if not email or not db.user_exists(email):
+            return jsonify({'error': 'Please register first'}), 401
         
         if not DEEPSEEK_API_KEY:
             return jsonify({'error': 'DeepSeek API key is not configured'}), 500
