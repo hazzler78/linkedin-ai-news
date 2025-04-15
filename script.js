@@ -77,15 +77,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.querySelector('.chatbot-messages');
     let isProcessing = false;
 
+    console.log('Chat elements:', {
+        chatToggle: chatToggle,
+        chatbotContainer: chatbotContainer,
+        chatbotClose: chatbotClose
+    });
+
     // Toggle chatbot visibility
     chatToggle.addEventListener('click', () => {
-        console.log('Chat toggle clicked');
+        console.log('Chat toggle clicked - Opening chat');
         chatbotContainer.classList.add('open');
         chatToggle.style.display = 'none';
+        chatInput.focus(); // Focus the input when opening
     });
 
     chatbotClose.addEventListener('click', () => {
-        console.log('Chat close clicked');
+        console.log('Chat close clicked - Closing chat');
         chatbotContainer.classList.remove('open');
         chatToggle.style.display = 'flex';
     });

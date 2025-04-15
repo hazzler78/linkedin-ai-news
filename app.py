@@ -9,16 +9,20 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='.')
+app = Flask(__name__)
 CORS(app)
 
 # Serve static files
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('.', 'landing.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
+    if os.path.exists(path):
+        directory = os.path.dirname(path) or '.'
+        filename = os.path.basename(path)
+        return send_from_directory(directory, filename)
     return send_from_directory('.', path)
 
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
