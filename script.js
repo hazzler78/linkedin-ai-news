@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatInput = document.querySelector('.chatbot-input input');
     const sendButton = document.querySelector('.send-button');
     const messagesContainer = document.querySelector('.chatbot-messages');
+    let isProcessing = false;
 
     // Toggle chatbot visibility
     chatToggle.addEventListener('click', () => {
@@ -86,18 +87,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle sending messages
-    function sendMessage() {
+    async function sendMessage() {
         const message = chatInput.value.trim();
-        if (message) {
+        if (message && !isProcessing) {
+            isProcessing = true;
+            
             // Add user message
             addMessage(message, 'user');
             chatInput.value = '';
-
-            // Simulate bot response (replace with actual AI integration)
-            setTimeout(() => {
-                const botResponse = "I'm your AI assistant. I'm here to help you with any questions about our LinkedIn AI News Poster service.";
-                addMessage(botResponse, 'bot');
-            }, 1000);
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+            messagesContainer.appendChild(typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                typingIndicator.remove();
+                
+                if (data.error) {
+                    addMessage("I'm sorry, I'm having trouble processing your request. Please try again.", 'bot');
+                } else {
+                    addMessage(data.response, 'bot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.remove();
+                addMessage("I'm sorry, I'm having trouble connecting to the server. Please try again.", 'bot');
+            }
+            
+            isProcessing = false;
         }
     }
 
@@ -105,7 +136,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function addMessage(text, sender) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chatbot-message', `${sender}-message`);
-        messageDiv.innerHTML = `<p>${text}</p>`;
+        
+        // Convert URLs to clickable links
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const formattedText = text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
+        
+        // Convert line breaks to <br> tags
+        const textWithBreaks = formattedText.replace(/\n/g, '<br>');
+        
+        messageDiv.innerHTML = `<p>${textWithBreaks}</p>`;
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -115,10 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Send message on Enter key
     chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
     });
+
+    // Add initial bot message
+    addMessage("Hello! I'm your AI assistant for LinkedIn AI News Poster. How can I help you today?", 'bot');
 });
 
 // Helper function to show form messages
