@@ -64,7 +64,7 @@ def chat():
         }
         
         response = requests.post(
-            'https://api.deepseek.ai/v1/chat/completions',
+            'https://api.deepseek.com/v1/chat/completions',
             json=data,
             headers=headers
         )
