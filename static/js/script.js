@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const response = await fetch(`${config.apiUrl}/api/chat`, {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -118,5 +118,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add initial greeting
-    addMessage('Hello! I\'m your AI News Assistant. How can I help you today?');
+    addMessage('Hello! I\'m your AI News Assistant. How can I help you today?', false);
 }); 
