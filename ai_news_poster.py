@@ -1,8 +1,6 @@
 import os
 import requests
-import schedule
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -254,29 +252,8 @@ Article to analyze:
                 print("Failed to format post content.")
         except Exception as e:
             print(f"Unexpected error in main run loop: {e}")
-
-def main():
-    poster = AINewsPoster()
-    
-    # Schedule the job to run daily at 9:00 AM
-    schedule.every().day.at("09:00").do(poster.run)
-    
-    # Run immediately on startup
-    poster.run()
-    
-    print("\nScheduler started. Will post daily at 9:00 AM.")
-    print("Press Ctrl+C to exit.")
-    
-    while True:
-        try:
-            schedule.run_pending()
-            time.sleep(60)
-        except KeyboardInterrupt:
-            print("\nShutting down gracefully...")
-            break
-        except Exception as e:
-            print(f"Error in scheduler loop: {e}")
-            time.sleep(60)
+            raise  # Re-raise the exception to ensure GitHub Actions marks the run as failed
 
 if __name__ == "__main__":
-    main() 
+    poster = AINewsPoster()
+    poster.run() 
