@@ -3,50 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn AI News Poster - Redirecting...</title>
-    <meta http-equiv="refresh" content="0;url=https://linkedin-ai-news-backend.onrender.com/">
-    <link rel="canonical" href="https://linkedin-ai-news-backend.onrender.com/">
-    <script>
-        window.location.href = "https://linkedin-ai-news-backend.onrender.com/";
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
-            color: white;
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        a {
-            color: white;
-            text-decoration: underline;
-            margin-top: 20px;
-        }
-    </style>
+    <title>LinkedIn AI News Poster</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <h1>LinkedIn AI News Poster</h1>
-    <div class="loader"></div>
-    <p>Redirecting to our new home...</p>
-    <p>If you are not redirected automatically, <a href="https://linkedin-ai-news-backend.onrender.com/">click here</a>.</p>
+    <header>
+        <nav>
+            <div class="logo">LinkedIn AI News Poster</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Automate Your LinkedIn Presence with AI</h1>
+                <p>Stay ahead of the curve with daily AI news updates and maintain an active professional presence.</p>
+                <div class="cta-buttons">
+                    <a href="#chat" class="button primary">Try Now</a>
+                    <a href="#features" class="button secondary">Learn More</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="chat" class="chat-section">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be added here -->
+                </div>
+                <div class="chat-input-container">
+                    <textarea id="chatInput" placeholder="Type your message..." rows="1"></textarea>
+                    <button id="sendButton">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="features">
+            <h2>Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-robot"></i>
+                    <h3>AI-Powered Content</h3>
+                    <p>Smart content curation and generation using advanced AI algorithms.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-clock"></i>
+                    <h3>Automated Posting</h3>
+                    <p>Schedule and automate your posts for consistent engagement.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Analytics</h3>
+                    <p>Track your post performance and audience engagement.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Connect</h3>
+                    <p>Link your LinkedIn account securely.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Customize</h3>
+                    <p>Set your preferences and posting schedule.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Automate</h3>
+                    <p>Let AI handle your content posting.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing">
+            <h2>Pricing Plans</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Free</h3>
+                    <div class="price">$0</div>
+                    <ul>
+                        <li>1 post per day</li>
+                        <li>Basic analytics</li>
+                        <li>Community support</li>
+                    </ul>
+                    <a href="#" class="button primary">Start Free</a>
+                </div>
+                <div class="pricing-card featured">
+                    <h3>Pro</h3>
+                    <div class="price">$19</div>
+                    <ul>
+                        <li>3 posts per day</li>
+                        <li>Advanced analytics</li>
+                        <li>Priority support</li>
+                        <li>Custom scheduling</li>
+                    </ul>
+                    <a href="#" class="button primary">Go Pro</a>
+                </div>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">Custom</div>
+                    <ul>
+                        <li>Unlimited posts</li>
+                        <li>Full analytics suite</li>
+                        <li>Dedicated support</li>
+                        <li>API access</li>
+                    </ul>
+                    <a href="#" class="button primary">Contact Us</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <h2>Get In Touch</h2>
+            <div class="contact-container">
+                <form id="contactForm">
+                    <input type="text" placeholder="Name" required>
+                    <input type="email" placeholder="Email" required>
+                    <textarea placeholder="Message" required></textarea>
+                    <button type="submit" class="button primary">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>LinkedIn AI News Poster</h4>
+                <p>Automating your professional presence with AI.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 LinkedIn AI News Poster. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
 </body>
 </html> 
