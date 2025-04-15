@@ -69,6 +69,10 @@ def chat():
             headers=headers
         )
         
+        print(f"DeepSeek API Response Status: {response.status_code}")
+        print(f"DeepSeek API Response Headers: {response.headers}")
+        print(f"DeepSeek API Response Body: {response.text}")
+        
         if response.status_code == 200:
             try:
                 response_data = response.json()
