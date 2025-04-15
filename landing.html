@@ -3,227 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn AI News Poster - Automated AI News Updates</title>
-    <meta name="description" content="Stay ahead of the curve with daily AI news updates automatically posted to your LinkedIn profile.">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Add favicon -->
-    <link rel="icon" type="image/png" href="static/images/favicon.png">
+    <title>LinkedIn AI News Poster - Redirecting...</title>
+    <meta http-equiv="refresh" content="0;url=https://linkedin-ai-news-backend.onrender.com/">
+    <link rel="canonical" href="https://linkedin-ai-news-backend.onrender.com/">
+    <script>
+        window.location.href = "https://linkedin-ai-news-backend.onrender.com/";
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        a {
+            color: white;
+            text-decoration: underline;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="logo">
-                <i class="fas fa-robot"></i>
-                <h1>LinkedIn AI News Poster</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#how-it-works">How It Works</a></li>
-                    <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Automate Your LinkedIn AI News Updates</h1>
-                <p>Stay ahead of the curve with daily AI news updates automatically posted to your LinkedIn profile.</p>
-                <div class="cta-buttons">
-                    <a href="#newsletter" class="btn btn-primary">Get Started</a>
-                    <a href="https://github.com/hazzler78/linkedin-ai-news" class="btn btn-secondary" target="_blank">View on GitHub</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="images/hero-image.png" alt="LinkedIn AI News Poster Demo">
-            </div>
-        </div>
-    </section>
-
-    <section id="features" class="features">
-        <div class="container">
-            <h2>Features</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <i class="fas fa-newspaper"></i>
-                    <h3>Latest AI News</h3>
-                    <p>Automatically fetches the most recent AI-related news from reliable sources.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-filter"></i>
-                    <h3>Smart Filtering</h3>
-                    <p>Filters out irrelevant content and focuses on technology and innovation.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-calendar-check"></i>
-                    <h3>Scheduled Posts</h3>
-                    <p>Posts automatically at your preferred time, every day.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-shield-alt"></i>
-                    <h3>Error Handling</h3>
-                    <p>Robust error handling and automatic retries for reliable operation.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="how-it-works" class="how-it-works">
-        <div class="container">
-            <h2>How It Works</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Set Up Your API Keys</h3>
-                    <p>Configure your LinkedIn and NewsAPI credentials in the .env file.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Run the Script</h3>
-                    <p>Start the script and it will immediately post your first AI news update.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Enjoy Daily Updates</h3>
-                    <p>The script runs in the background, posting daily at your scheduled time.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2>Pricing</h2>
-            <div class="pricing-cards">
-                <div class="pricing-card">
-                    <h3>Free</h3>
-                    <div class="price">$0</div>
-                    <ul>
-                        <li>Open Source</li>
-                        <li>Self-hosted</li>
-                        <li>Basic support</li>
-                    </ul>
-                    <a href="https://github.com/hazzler78/linkedin-ai-news" class="btn btn-outline">Get Started</a>
-                </div>
-                <div class="pricing-card featured">
-                    <h3>Pro</h3>
-                    <div class="price">$9.99<span>/month</span></div>
-                    <ul>
-                        <li>Hosted solution</li>
-                        <li>Priority support</li>
-                        <li>Custom scheduling</li>
-                        <li>Advanced filtering</li>
-                    </ul>
-                    <a href="#newsletter" class="btn btn-primary">Join Waitlist</a>
-                </div>
-                <div class="pricing-card">
-                    <h3>Enterprise</h3>
-                    <div class="price">Custom</div>
-                    <ul>
-                        <li>Custom features</li>
-                        <li>Dedicated support</li>
-                        <li>Multiple accounts</li>
-                        <li>API access</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-outline">Contact Us</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="newsletter" class="newsletter">
-        <div class="container">
-            <h2>Stay Updated</h2>
-            <p>Subscribe to our newsletter for updates, tips, and early access to new features.</p>
-            <form id="newsletter-form" action="https://formspree.io/f/xblgwqlg" method="POST">
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Your email address" required>
-                    <button type="submit" class="btn btn-primary">Subscribe</button>
-                </div>
-                <div class="form-message" id="form-message"></div>
-            </form>
-        </div>
-    </section>
-
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2>Contact Us</h2>
-            <p>Have questions or need help? Reach out to us!</p>
-            <form id="contact-form" action="https://formspree.io/f/xblgwqlg" method="POST">
-                <div class="form-group">
-                    <input type="text" name="name" placeholder="Your name" required>
-                </div>
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Your email" required>
-                </div>
-                <div class="form-group">
-                    <textarea name="message" placeholder="Your message" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Send Message</button>
-                <div class="form-message" id="contact-form-message"></div>
-            </form>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <i class="fas fa-robot"></i>
-                    <h3>LinkedIn AI News Poster</h3>
-                    <p>Now with AI-powered chat assistance!</p>
-                </div>
-                <div class="footer-links">
-                    <h4>Links</h4>
-                    <ul>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#how-it-works">How It Works</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div class="footer-social">
-                    <h4>Follow Us</h4>
-                    <div class="social-icons">
-                        <a href="https://github.com/hazzler78" target="_blank"><i class="fab fa-github"></i></a>
-                        <a href="https://www.linkedin.com/in/mikaelsoderberg1/" target="_blank"><i class="fab fa-linkedin"></i></a>
-                        <a href="https://x.com/hazzler" target="_blank"><i class="fab fa-twitter"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 LinkedIn AI News Poster. All rights reserved.</p>
-                <p>Deployed on <a href="https://linkedin-ai-news-backend.onrender.com" target="_blank">Render</a> | Licensed under <a href="LICENSE">MIT License</a></p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Chat Interface -->
-    <div class="chat-toggle-button">
-        <i class="fas fa-comments"></i>
-    </div>
-    
-    <div class="chatbot-container">
-        <div class="chatbot-header">
-            <h3>AI News Assistant</h3>
-            <button class="chatbot-toggle">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="chatbot-messages"></div>
-        <div class="chatbot-input">
-            <input type="text" placeholder="Type your message...">
-            <button class="send-button">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script type="module" src="static/js/script.js"></script>
+    <h1>LinkedIn AI News Poster</h1>
+    <div class="loader"></div>
+    <p>Redirecting to our new home...</p>
+    <p>If you are not redirected automatically, <a href="https://linkedin-ai-news-backend.onrender.com/">click here</a>.</p>
 </body>
 </html> 
