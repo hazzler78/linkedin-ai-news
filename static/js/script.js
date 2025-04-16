@@ -3,6 +3,10 @@ const BASE_URL = window.location.hostname === 'localhost' || window.location.hos
     ? '' 
     : window.location.origin;
 
+// Add debug logging for API URLs
+console.log('Current hostname:', window.location.hostname);
+console.log('Using BASE_URL:', BASE_URL);
+
 document.addEventListener('DOMContentLoaded', () => {
     // Chat toggle functionality
     const chatToggleButton = document.querySelector('.chat-toggle-button');
@@ -15,6 +19,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isProcessing = false;
     let userEmail = localStorage.getItem('userEmail');
+
+    // Add error handling for fetch requests
+    async function handleFetchWithRetry(url, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                console.log(`Attempting request to ${url} (attempt ${i + 1}/${retries})`);
+                const response = await fetch(url, options);
+                console.log(`Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.log(`Error response body: ${text}`);
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                }
+                
+                const data = await response.json();
+                return { response, data };
+            } catch (error) {
+                console.error(`Attempt ${i + 1} failed:`, error);
+                if (i === retries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
+        }
+    }
 
     function toggleChat() {
         chatbotContainer.classList.toggle('active');
@@ -78,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('reg-email').value;
 
             try {
-                const response = await fetch(`${BASE_URL}/api/register`, {
+                const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -86,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ name, email })
                 });
 
-                const data = await response.json();
                 if (response.ok) {
                     localStorage.setItem('userEmail', email);
                     userEmail = email;

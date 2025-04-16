@@ -1,0 +1,45 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "vercel_app.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.9"
+            }
+        },
+        {
+            "src": "static/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "*.html",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/vercel_app.py"
+        },
+        {
+            "src": "/(.*\\.html)",
+            "dest": "/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/vercel_app.py"
+        }
+    ],
+    "env": {
+        "PYTHONUNBUFFERED": "1",
+        "FLASK_ENV": "production",
+        "FLASK_APP": "vercel_app.py",
+        "VERCEL_ENV": "production"
+    }
+} 
