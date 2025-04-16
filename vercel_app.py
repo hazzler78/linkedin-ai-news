@@ -121,12 +121,19 @@ Please provide a helpful response."""
         if response.status_code == 200:
             response_data = response.json()
             if 'choices' in response_data and len(response_data['choices']) > 0:
-                message = response_data['choices'][0]['message']['content']
-                return jsonify({"message": message}), 200
+                ai_response = response_data['choices'][0]['message']['content']
+                return jsonify({"response": ai_response}), 200
             else:
                 return jsonify({"error": "Invalid response from DeepSeek API"}), 500
         else:
-            return jsonify({"error": f"DeepSeek API error: {response.text}"}), response.status_code
+            error_message = response.text
+            try:
+                error_data = response.json()
+                if 'error' in error_data:
+                    error_message = error_data['error']
+            except:
+                pass
+            return jsonify({"error": f"DeepSeek API error: {error_message}"}), response.status_code
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
         return jsonify({"error": str(e)}), 500

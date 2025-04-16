@@ -89,11 +89,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type === 'bot' ? 'assistant' : type}`;
         
-        // Convert URLs to clickable links
-        let content = message.toString().replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-        
-        // Replace line breaks with <br> tags
-        content = content.replace(/\n/g, '<br>');
+        // Convert message to string and handle special characters
+        let content = String(message)
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
+            .replace(/\n/g, '<br>');
         
         messageDiv.innerHTML = content;
         chatMessages.appendChild(messageDiv);
@@ -216,9 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (messageContainer) {
                         messageContainer.style.display = 'none';
                     }
-                } else if (!data || !data.response) {
+                } else if (!data || (!data.response && !data.error)) {
                     console.error('Invalid response from server:', data);
                     addMessage("I apologize, but I'm having trouble generating a response right now. Please try again in a moment.", 'bot');
+                } else if (data.error) {
+                    console.error('Error from server:', data.error);
+                    if (data.error.includes('DeepSeek API')) {
+                        addMessage("I apologize, but the AI service is currently unavailable. Please try again later.", 'bot');
+                    } else {
+                        addMessage(data.error, 'bot');
+                    }
                 } else {
                     addMessage(data.response, 'bot');
                 }
