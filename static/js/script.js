@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sendMessage() {
-        const messageInput = document.getElementById('chatInput');
+        const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
         const userEmail = localStorage.getItem('userEmail');
         
