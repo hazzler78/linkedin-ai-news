@@ -16,6 +16,7 @@ class Database:
         self.store_id = None
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.initialized = False
         
         print(f"Environment: {os.getenv('VERCEL_ENV', 'development')}")
         if self.blob_token:
@@ -24,18 +25,25 @@ class Database:
             print("Blob Token: Missing")
         print(f"Blob API URL: {self.blob_api_url}")
         
-        if not self.blob_token:
-            raise ValueError("BLOB_READ_WRITE_TOKEN environment variable is required")
+        # Try to initialize if token is available
+        if self.blob_token:
+            if not self.blob_token.startswith('vercel_blob_rw_'):
+                print("Warning: Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
+                return
+                
+            # Set store_id after validation
+            self.store_id = self.blob_token.split('_')[3]
+            print(f"Store ID: {self.store_id}")
             
-        if not self.blob_token.startswith('vercel_blob_rw_'):
-            raise ValueError("Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
-            
-        # Set store_id after validation
-        self.store_id = self.blob_token.split('_')[3]
-        print(f"Store ID: {self.store_id}")
-        
-        # Initialize with retries
-        self._initialize_with_retries()
+            # Initialize with retries
+            try:
+                self._initialize_with_retries()
+                self.initialized = True
+            except Exception as e:
+                print(f"Failed to initialize database: {e}")
+                self.initialized = False
+        else:
+            print("Warning: BLOB_READ_WRITE_TOKEN environment variable is missing. Database operations will be limited.")
 
     def _initialize_with_retries(self):
         """Initialize database with retries for serverless environment"""
@@ -57,6 +65,9 @@ class Database:
 
     def _make_request(self, method, url, **kwargs):
         """Make HTTP request with retries"""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         for attempt in range(self.max_retries):
             try:
                 response = requests.request(
@@ -74,6 +85,10 @@ class Database:
                 raise
 
     def _get_headers(self):
+        """Get headers for API requests"""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         headers = {
             "Authorization": f"Bearer {self.blob_token}",
             "Content-Type": "application/json"
@@ -87,10 +102,16 @@ class Database:
 
     def _get_public_url(self, path: str) -> str:
         """Get the public URL for a blob"""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         return f"https://{self.store_id}.public.blob.vercel-storage.com/{path}"
 
     def _ensure_users_index_exists(self):
         """Ensure the users index file exists in Blob storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             print("\nChecking users index...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
@@ -132,6 +153,9 @@ class Database:
 
     def _load_user_paths(self):
         """Load existing user paths from the index"""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             print("\nLoading user paths...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
@@ -154,6 +178,9 @@ class Database:
 
     def _update_users_index(self, email: str, file_path: str = None) -> bool:
         """Update the users index in Vercel Blob Storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             print("\nUpdating users index...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
@@ -192,6 +219,9 @@ class Database:
 
     def add_user(self, name: str, email: str) -> bool:
         """Add a new user to Vercel Blob Storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             print(f"\nAttempting to add user: {email}")
             
@@ -248,6 +278,9 @@ class Database:
 
     def user_exists(self, email: str) -> bool:
         """Check if a user exists in Vercel Blob Storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             print(f"\nChecking if user exists: {email}")
             
@@ -286,6 +319,9 @@ class Database:
 
     def get_user_by_email(self, email: str) -> Optional[Dict]:
         """Get user information from Vercel Blob Storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             response = self._make_request(
                 'GET',
@@ -305,6 +341,9 @@ class Database:
 
     def get_all_users(self) -> List[Dict]:
         """Get all users from Vercel Blob Storage."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             # Get users index with retries
             response = self._make_request(
@@ -335,6 +374,9 @@ class Database:
 
     def get_user_count(self) -> int:
         """Get the total number of users."""
+        if not self.initialized:
+            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
+            
         try:
             users = self.get_all_users()
             return len(users)

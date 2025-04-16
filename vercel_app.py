@@ -1,136 +1,117 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
-from dotenv import load_dotenv
+import json
 from database import Database
 import requests
+from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
-if os.path.exists('.env'):
-    load_dotenv(override=True)
-
-# Print environment info for debugging
-print("\n=== Vercel App Initialization ===")
-print("Environment variables:")
-for key in os.environ:
-    if 'TOKEN' in key or 'KEY' in key:
-        print(f"- {key}: {'Present' if os.environ[key] else 'Missing'}")
-
-print("\nVercel environment:")
-print(f"- VERCEL_ENV: {os.getenv('VERCEL_ENV', 'development')}")
-print(f"- VERCEL: {os.getenv('VERCEL', 'Not present')}")
-print(f"- BLOB_TOKEN: {'Present' if os.getenv('BLOB_READ_WRITE_TOKEN') else 'Missing'}")
+load_dotenv()
 
 # Initialize Flask app
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+app = Flask(__name__)
 CORS(app)
 
 # Initialize database
-db = Database()
+print("\n=== Vercel App Initialization ===")
+print("Environment variables:")
+for var in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'DEEPSEEK_API_KEY', 'NEWS_API_KEY']:
+    print(f"- {var}: {'Present' if os.getenv(var) else 'Missing'}")
+print("Vercel environment:")
+for var in ['VERCEL_ENV', 'VERCEL']:
+    print(f"- {var}: {os.getenv(var, 'Not set')}")
+print(f"- BLOB_TOKEN: {'Present' if os.getenv('BLOB_READ_WRITE_TOKEN') else 'Missing'}")
+
+try:
+    db = Database()
+    db_initialized = db.initialized
+    if not db_initialized:
+        logger.warning("Database not initialized. Some functionality will be limited.")
+except Exception as e:
+    logger.error(f"Error initializing database: {e}")
+    db_initialized = False
 
 # Serve static files
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'landing.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # First try to serve from static folder
-    static_path = os.path.join('static', path)
-    if os.path.exists(static_path):
-        return send_from_directory('static', path)
-    
-    # Then try to serve from root
-    if os.path.exists(path):
-        directory = os.path.dirname(path) or '.'
-        filename = os.path.basename(path)
-        return send_from_directory(directory, filename)
-    
-    # Finally, try to serve from root as fallback
     return send_from_directory('.', path)
 
+# API routes
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    name = data.get('name')
-    email = data.get('email')
-    
-    if not name or not email:
-        return jsonify({'error': 'Name and email are required'}), 400
-    
-    if db.user_exists(email):
-        return jsonify({'error': 'Email already registered'}), 409
-    
-    success = db.add_user(name, email)
-    if success:
-        return jsonify({'message': 'Registration successful'}), 201
-    else:
-        return jsonify({'error': 'Registration failed'}), 500
+    if not db_initialized:
+        return jsonify({"error": "Database service is currently unavailable. Please try again later."}), 503
+        
+    try:
+        data = request.json
+        name = data.get('name')
+        email = data.get('email')
+        
+        if not name or not email:
+            return jsonify({"error": "Name and email are required"}), 400
+            
+        success = db.add_user(name, email)
+        if success:
+            return jsonify({"message": "User registered successfully"}), 200
+        else:
+            return jsonify({"error": "Failed to register user"}), 500
+    except Exception as e:
+        logger.error(f"Error in register endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
+    if not db_initialized:
+        return jsonify({"error": "Database service is currently unavailable. Please try again later."}), 503
+        
     try:
-        print("\n=== Chat Endpoint ===")
         data = request.json
-        user_message = data.get('message', '')
         email = data.get('email')
+        message = data.get('message')
         
-        print(f"Request data:")
-        print(f"- Email: {email}")
-        print(f"- Message length: {len(user_message)}")
-        print(f"- Headers: {dict(request.headers)}")
-        
-        if not email:
-            print("Error: No email provided")
-            return jsonify({'error': 'Please register first'}), 401
-        
-        print("\nChecking user existence...")
-        user_exists = db.user_exists(email)
-        print(f"User exists result: {user_exists}")
-        
-        if not user_exists:
-            print("Error: User not found")
-            return jsonify({'error': 'Please register first'}), 401
-        
-        DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
-        if not DEEPSEEK_API_KEY:
-            print("Error: DeepSeek API key not configured")
-            return jsonify({'error': 'DeepSeek API key is not configured'}), 500
-        
-        # Prepare the prompt for Deepseek
-        prompt = f"""You are an AI assistant for LinkedIn AI News Poster, a service that helps professionals stay updated with AI news.
-        Be helpful, professional, and concise in your responses.
-        
-        User message: {user_message}
-        
-        Respond in a helpful and engaging way, focusing on AI news, technology trends, and professional development.
-        Keep responses under 200 words."""
-        
+        if not email or not message:
+            return jsonify({"error": "Email and message are required"}), 400
+            
+        # Check if user exists
+        if not db.user_exists(email):
+            return jsonify({"error": "Please register first"}), 401
+            
+        # Call DeepSeek API
+        deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+        if not deepseek_api_key:
+            return jsonify({"error": "DeepSeek API key not configured"}), 500
+            
         headers = {
-            'Authorization': f'Bearer {DEEPSEEK_API_KEY}',
-            'Content-Type': 'application/json'
+            "Authorization": f"Bearer {deepseek_api_key}",
+            "Content-Type": "application/json"
         }
         
-        data = {
-            'messages': [
-                {
-                    'role': 'system',
-                    'content': 'You are a helpful AI assistant for LinkedIn AI News Poster. Be professional and concise.'
-                },
-                {
-                    'role': 'user',
-                    'content': prompt
-                }
-            ],
-            'model': 'deepseek-chat',
-            'temperature': 0.7,
-            'max_tokens': 200
-        }
+        prompt = f"""You are a helpful AI assistant for LinkedIn AI News Poster.
+User email: {email}
+User message: {message}
+
+Please provide a helpful response."""
         
         response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            json=data,
-            headers=headers
+            "https://api.deepseek.com/v1/chat/completions",
+            headers=headers,
+            json={
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "system", "content": "You are a helpful AI assistant for LinkedIn AI News Poster."},
+                    {"role": "user", "content": prompt}
+                ]
+            }
         )
         
         print(f"DeepSeek API Response Status: {response.status_code}")
@@ -138,30 +119,50 @@ def chat():
         print(f"DeepSeek API Response Body: {response.text}")
         
         if response.status_code == 200:
-            try:
-                response_data = response.json()
-                ai_response = response_data['choices'][0]['message']['content']
-                return jsonify({'response': ai_response})
-            except (KeyError, IndexError) as e:
-                print(f"Error parsing DeepSeek response: {str(e)}")
-                print(f"Response content: {response.text}")
-                return jsonify({'error': 'Failed to parse AI response'}), 500
+            response_data = response.json()
+            if 'choices' in response_data and len(response_data['choices']) > 0:
+                message = response_data['choices'][0]['message']['content']
+                return jsonify({"message": message}), 200
+            else:
+                return jsonify({"error": "Invalid response from DeepSeek API"}), 500
         else:
-            print(f"DeepSeek API error: {response.status_code}")
-            print(f"Response content: {response.text}")
-            return jsonify({'error': f'Failed to get response from AI (Status: {response.status_code})'}), 500
-            
+            return jsonify({"error": f"DeepSeek API error: {response.text}"}), response.status_code
     except Exception as e:
-        print(f"Chat endpoint error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error in chat endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
 
-# Handle CORS headers
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    if not db_initialized:
+        return jsonify({"error": "Database service is currently unavailable. Please try again later."}), 503
+        
+    try:
+        users = db.get_all_users()
+        return jsonify({"users": users}), 200
+    except Exception as e:
+        logger.error(f"Error in get_users endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/user-count', methods=['GET'])
+def get_user_count():
+    if not db_initialized:
+        return jsonify({"error": "Database service is currently unavailable. Please try again later."}), 503
+        
+    try:
+        count = db.get_user_count()
+        return jsonify({"count": count}), 200
+    except Exception as e:
+        logger.error(f"Error in get_user_count endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Not found"}), 404
+
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
-    app.run() 
+    app.run(debug=True) 
