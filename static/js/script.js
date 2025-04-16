@@ -1,3 +1,8 @@
+// Get the base URL for API calls
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? '' 
+    : window.location.origin;
+
 document.addEventListener('DOMContentLoaded', () => {
     // Chat toggle functionality
     const chatToggleButton = document.querySelector('.chat-toggle-button');
@@ -6,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chat-messages');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.querySelector('.send-button');
+    const messageContainer = document.querySelector('.message-container');
 
     let isProcessing = false;
     let userEmail = localStorage.getItem('userEmail');
@@ -72,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('reg-email').value;
 
             try {
-                const response = await fetch('/api/register', {
+                const response = await fetch(`${BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -86,8 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     userEmail = email;
                     registrationForm.remove();
                     addMessage('Registration successful! How can I help you today?', 'bot');
-                    // Show message input after successful registration
-                    const messageContainer = document.querySelector('.message-container');
                     if (messageContainer) {
                         messageContainer.style.display = 'flex';
                     }
@@ -105,80 +109,85 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeChat() {
         if (!userEmail) {
             addRegistrationForm();
-            // Hide message input until registered
-            const messageContainer = document.querySelector('.message-container');
             if (messageContainer) {
                 messageContainer.style.display = 'none';
             }
         } else {
             addMessage('Welcome back! How can I help you today?', 'bot');
+            if (messageContainer) {
+                messageContainer.style.display = 'flex';
+            }
         }
     }
 
     // Send message function
     async function sendMessage() {
-        if (isProcessing || !messageInput) return;
-        
         const message = messageInput.value.trim();
-        if (!message) return;
-        
-        if (!userEmail) {
-            alert('Please register first to use the chat.');
-            return;
-        }
-
-        isProcessing = true;
-        messageInput.value = '';
-
-        // Add user message
-        addMessage(message, 'user');
-
-        // Add typing indicator
-        const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'message typing';
-        typingIndicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        chatMessages.appendChild(typingIndicator);
-
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    message: message,
-                    email: userEmail
-                })
-            });
-
-            // Remove typing indicator
-            typingIndicator.remove();
-
-            const data = await response.json();
-            if (response.ok) {
-                addMessage(data.response, 'bot');
-            } else {
+        if (message && !isProcessing) {
+            isProcessing = true;
+            
+            // Get current user email
+            if (!userEmail) {
+                addMessage("Please register first to use the chat.", 'bot');
+                if (messageContainer) {
+                    messageContainer.style.display = 'none';
+                }
+                addRegistrationForm();
+                isProcessing = false;
+                return;
+            }
+            
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        email: userEmail
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                typingIndicator.remove();
+                
                 if (response.status === 401) {
+                    // Clear email and show registration message
                     localStorage.removeItem('userEmail');
                     userEmail = null;
+                    chatMessages.innerHTML = ''; // Clear chat messages
                     addRegistrationForm();
-                    addMessage('Your session has expired. Please register again.', 'bot');
-                    // Hide message input
-                    const messageContainer = document.querySelector('.message-container');
+                    addMessage("Your session has expired. Please register again to continue.", 'bot');
                     if (messageContainer) {
                         messageContainer.style.display = 'none';
                     }
+                } else if (data.error) {
+                    addMessage("I'm sorry, I'm having trouble processing your request. Please try again.", 'bot');
                 } else {
-                    addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
+                    addMessage(data.response, 'bot');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.remove();
+                addMessage("I'm sorry, I'm having trouble connecting to the server. Please try again.", 'bot');
             }
-        } catch (error) {
-            console.error('Chat error:', error);
-            typingIndicator.remove();
-            addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
+            
+            isProcessing = false;
         }
-
-        isProcessing = false;
     }
 
     // Event listeners for sending messages
