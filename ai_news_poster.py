@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
@@ -8,12 +9,33 @@ from urllib3.util.retry import Retry
 # Load environment variables
 load_dotenv()
 
+def log_message(message, level="INFO"):
+    """Log messages with timestamp and level."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {level}: {message}")
+
 class AINewsPoster:
     def __init__(self):
-        self.access_token = os.getenv('LINKEDIN_ACCESS_TOKEN')
-        self.linkedin_id = os.getenv('LINKEDIN_PERSON_ID')
-        self.news_api_key = os.getenv('NEWS_API_KEY')
-        self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+        # Check for required environment variables
+        required_vars = {
+            'LINKEDIN_ACCESS_TOKEN': os.getenv('LINKEDIN_ACCESS_TOKEN'),
+            'LINKEDIN_PERSON_ID': os.getenv('LINKEDIN_PERSON_ID'),
+            'NEWS_API_KEY': os.getenv('NEWS_API_KEY'),
+            'DEEPSEEK_API_KEY': os.getenv('DEEPSEEK_API_KEY')
+        }
+        
+        missing_vars = [key for key, value in required_vars.items() if not value]
+        if missing_vars:
+            error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+            log_message(error_msg, "ERROR")
+            raise ValueError(error_msg)
+
+        self.access_token = required_vars['LINKEDIN_ACCESS_TOKEN']
+        self.linkedin_id = required_vars['LINKEDIN_PERSON_ID']
+        self.news_api_key = required_vars['NEWS_API_KEY']
+        self.deepseek_api_key = required_vars['DEEPSEEK_API_KEY']
+        
+        log_message(f"Initialized with LinkedIn ID: {self.linkedin_id}")
         
         # Configure retry strategy
         self.retry_strategy = Retry(
@@ -185,8 +207,15 @@ Article to analyze:
 
     def post_to_linkedin(self, content):
         """Post the formatted content to LinkedIn."""
+        if not content:
+            log_message("No content to post", "ERROR")
+            return False
+
+        log_message("Attempting to post to LinkedIn...")
+        log_message(f"Using LinkedIn ID: {self.linkedin_id}")
+        
         post_data = {
-            "author": f"urn:li:person:{self.linkedin_id}",  # Using the environment variable
+            "author": f"urn:li:person:{self.linkedin_id}",
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
@@ -200,60 +229,77 @@ Article to analyze:
                 "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
             }
         }
-        
+
         headers = {
             'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0'
         }
-        
+
         try:
+            log_message("Sending POST request to LinkedIn API...")
             response = self.session.post(
                 'https://api.linkedin.com/v2/ugcPosts',
-                headers=headers,
                 json=post_data,
+                headers=headers,
                 timeout=10
             )
             
-            if response.status_code in [201, 200]:
-                print("Successfully posted to LinkedIn!")
-                return True
-            else:
-                print(f"Error posting to LinkedIn. Status code: {response.status_code}")
-                print(f"Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            print(f"Error posting to LinkedIn: {e}")
+            log_message(f"LinkedIn API Response Status: {response.status_code}")
+            log_message(f"LinkedIn API Response: {response.text}")
+            
+            response.raise_for_status()
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            log_message(f"Error posting to LinkedIn: {str(e)}", "ERROR")
+            log_message(f"Response content: {getattr(e.response, 'text', 'No response content')}", "ERROR")
             return False
 
     def run(self):
-        """Main method to fetch news and post to LinkedIn."""
+        """Run the news posting process."""
         try:
-            print(f"\nStarting AI news post at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            print("Fetching and analyzing AI news...")
+            log_message("Starting news posting process...")
+            
+            # Fetch news articles
+            log_message("Fetching AI news articles...")
             articles = self.fetch_ai_news()
-            
             if not articles:
-                print("No articles found.")
-                return
-                
-            print(f"Found and analyzed {len(articles)} articles.")
-            post_content = self.format_news_post(articles)
+                log_message("No articles found", "ERROR")
+                return False
+            log_message(f"Found {len(articles)} articles")
             
-            if post_content:
-                print("\nPost content preview:")
-                print("-" * 50)
-                print(post_content)
-                print("-" * 50)
-                print("\nPosting to LinkedIn...")
-                self.post_to_linkedin(post_content)
+            # Format the post
+            log_message("Formatting news post...")
+            post_content = self.format_news_post(articles)
+            if not post_content:
+                log_message("Failed to format post content", "ERROR")
+                return False
+            log_message("Post content formatted successfully")
+            
+            # Post to LinkedIn
+            log_message("Posting to LinkedIn...")
+            success = self.post_to_linkedin(post_content)
+            
+            if success:
+                log_message("Successfully posted to LinkedIn!")
+                return True
             else:
-                print("Failed to format post content.")
+                log_message("Failed to post to LinkedIn", "ERROR")
+                return False
+                
         except Exception as e:
-            print(f"Unexpected error in main run loop: {e}")
-            raise  # Re-raise the exception to ensure GitHub Actions marks the run as failed
+            log_message(f"Unexpected error: {str(e)}", "ERROR")
+            return False
 
 if __name__ == "__main__":
-    poster = AINewsPoster()
-    poster.run() 
+    try:
+        poster = AINewsPoster()
+        success = poster.run()
+        if not success:
+            log_message("Script completed with errors", "ERROR")
+            sys.exit(1)
+        log_message("Script completed successfully")
+    except Exception as e:
+        log_message(f"Fatal error: {str(e)}", "ERROR")
+        sys.exit(1) 
