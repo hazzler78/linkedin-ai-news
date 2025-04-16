@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showTypingIndicator() {
-        const messagesContainer = document.querySelector('.messages');
+        const messagesContainer = document.getElementById('chat-messages');
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'typing-indicator';
         typingIndicator.innerHTML = `
