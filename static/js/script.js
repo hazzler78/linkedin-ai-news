@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
             try {
+                console.log('Sending message:', message);
                 const response = await fetch(`${BASE_URL}/api/chat`, {
                     method: 'POST',
                     headers: {
@@ -221,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let data;
                 try {
                     data = JSON.parse(responseText);
+                    console.log('Parsed response data:', data);
                 } catch (e) {
                     console.error('Failed to parse response as JSON:', e);
                     throw new Error('Invalid response format from server');
@@ -236,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (messageContainer) {
                         messageContainer.style.display = 'none';
                     }
-                } else if (!data || (!data.response && !data.error)) {
-                    console.error('Invalid response from server:', data);
+                } else if (!data) {
+                    console.error('No data in response');
                     addMessage("I apologize, but I'm having trouble generating a response right now. Please try again in a moment.", 'bot');
                 } else if (data.error) {
                     console.error('Error from server:', data.error);
@@ -246,9 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         addMessage(data.error, 'bot');
                     }
+                } else if (data.response) {
+                    console.log('Adding bot response:', data.response);
+                    addMessage(data.response, 'bot');
                 } else {
-                    const botResponse = data.response || "I apologize, but I couldn't generate a proper response.";
-                    addMessage(botResponse, 'bot');
+                    console.error('Invalid response format:', data);
+                    addMessage("I apologize, but I received an invalid response format. Please try again.", 'bot');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -262,9 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorMessage = "I received an invalid response from the server. Please try again.";
                 }
                 addMessage(errorMessage, 'bot');
+            } finally {
+                isProcessing = false;
             }
-            
-            isProcessing = false;
         }
     }
 
