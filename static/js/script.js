@@ -89,14 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type === 'bot' ? 'assistant' : type}`;
         
-        // Convert message to string and handle special characters
-        let content = String(message)
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
-            .replace(/\n/g, '<br>');
+        try {
+            // Convert message to string and handle special characters
+            let content = String(message)
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
+                .replace(/\n/g, '<br>');
+            
+            messageDiv.innerHTML = content;
+        } catch (error) {
+            console.error('Error formatting message:', error);
+            messageDiv.textContent = "An error occurred while displaying the message.";
+        }
         
-        messageDiv.innerHTML = content;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -193,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
             try {
-                const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
+                const response = await fetch(`${BASE_URL}/api/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -206,6 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Remove typing indicator
                 typingIndicator.remove();
+                
+                // Get response text first
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Failed to parse response as JSON:', e);
+                    throw new Error('Invalid response format from server');
+                }
                 
                 if (response.status === 401) {
                     // Clear email and show registration message
@@ -228,7 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         addMessage(data.error, 'bot');
                     }
                 } else {
-                    addMessage(data.response, 'bot');
+                    const botResponse = data.response || "I apologize, but I couldn't generate a proper response.";
+                    addMessage(botResponse, 'bot');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -238,6 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorMessage = "The AI service is currently unavailable. Please try again later.";
                 } else if (error.message.includes('Database')) {
                     errorMessage = "There seems to be an issue with the database. Please try again later.";
+                } else if (error.message.includes('Invalid response format')) {
+                    errorMessage = "I received an invalid response from the server. Please try again.";
                 }
                 addMessage(errorMessage, 'bot');
             }
