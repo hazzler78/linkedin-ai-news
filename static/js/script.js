@@ -191,40 +191,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sendMessage() {
-        const messageInput = document.getElementById('message-input');
+        const messageInput = document.getElementById('chatInput');
         const message = messageInput.value.trim();
+        const userEmail = localStorage.getItem('userEmail');
         
         if (!message) return;
         
-        // Clear input and add user message
-        messageInput.value = '';
+        // Add user message to chat
         addMessage(message, 'user');
+        messageInput.value = '';
+        
+        // Show typing indicator
+        showTypingIndicator();
         
         try {
-            // Show typing indicator
-            showTypingIndicator();
-            
+            console.log('Sending message with email:', userEmail);
             const response = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message })
+                body: JSON.stringify({
+                    email: userEmail,
+                    message: message
+                })
             });
-
-            // Remove typing indicator and add assistant's response
+            
+            const data = await response.json();
             removeTypingIndicator();
             
-            if (response && response.message) {
-                addMessage(response.message, 'assistant');
+            if (data.error) {
+                addMessage(data.error, 'error');
+                if (data.error === 'Please register first') {
+                    localStorage.removeItem('userEmail');
+                    showRegistrationForm();
+                }
             } else {
-                console.error('Invalid response format:', response);
-                addMessage("I apologize, but I encountered an error. Please try again.", 'assistant');
+                addMessage(data.response, 'assistant');
             }
         } catch (error) {
             console.error('Error sending message:', error);
             removeTypingIndicator();
-            addMessage("I apologize, but I encountered an error. Please try again.", 'assistant');
+            addMessage('Sorry, there was an error processing your message. Please try again.', 'error');
         }
     }
 
