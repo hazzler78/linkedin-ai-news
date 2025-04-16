@@ -18,39 +18,56 @@ class Database:
         self.retry_delay = retry_delay
         self.initialized = False
         
-        print(f"Environment: {os.getenv('VERCEL_ENV', 'development')}")
-        if self.blob_token:
-            print(f"Blob Token: {self.blob_token[:20]}...")
-        else:
-            print("Blob Token: Missing")
+        if not self._validate_token():
             return
             
-        print(f"Blob API URL: {self.blob_api_url}")
-        
-        # Try to initialize if token is available
-        if not self.blob_token.startswith('vercel_blob_rw_'):
-            print("Warning: Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
-            return
-            
-        # Set store_id after validation
-        try:
-            self.store_id = self.blob_token.split('_')[3]
-            print(f"Store ID: {self.store_id}")
-        except IndexError:
-            print("Warning: Invalid Blob token format. Could not extract store ID.")
-            return
-            
-        # Initialize with retries
         try:
             self._initialize_with_retries()
             self.initialized = True
             print("Database initialized successfully")
         except Exception as e:
-            print(f"Failed to initialize database: {e}")
+            print(f"Error: Failed to initialize database: {e}")
+            print("This might be due to:")
+            print("1. Using a token from a different Vercel project")
+            print("2. The Blob Storage not being properly set up")
+            print("3. Network connectivity issues")
+            print("\nPlease check your Vercel project settings and ensure:")
+            print("1. You're using the correct BLOB_READ_WRITE_TOKEN")
+            print("2. The token is from the same project as your deployment")
+            print("3. The Blob Storage is properly set up in your project")
             self.initialized = False
+
+    def _validate_token(self):
+        """Validate the blob token and extract store ID."""
+        print(f"Environment: {os.getenv('VERCEL_ENV', 'development')}")
+        
+        if not self.blob_token:
+            print("Error: BLOB_READ_WRITE_TOKEN environment variable is missing")
+            print("Please set the BLOB_READ_WRITE_TOKEN in your Vercel project settings")
+            return False
+            
+        print(f"Blob Token: {self.blob_token[:20]}...")
+        print(f"Blob API URL: {self.blob_api_url}")
+        
+        if not self.blob_token.startswith('vercel_blob_rw_'):
+            print("Error: Invalid Blob token format")
+            print("Token should start with 'vercel_blob_rw_'")
+            print("Please check your Vercel project settings and ensure you're using the correct token")
+            return False
+            
+        try:
+            self.store_id = self.blob_token.split('_')[3]
+            print(f"Store ID: {self.store_id}")
+            return True
+        except IndexError:
+            print("Error: Invalid Blob token format")
+            print("Could not extract store ID from token")
+            print("Please check your Vercel project settings and ensure you're using the correct token")
+            return False
 
     def _initialize_with_retries(self):
         """Initialize database with retries for serverless environment"""
+        last_error = None
         for attempt in range(self.max_retries):
             try:
                 # Initialize users index if it doesn't exist
@@ -59,17 +76,20 @@ class Database:
                     self._load_user_paths()
                     return True
             except Exception as e:
+                last_error = e
                 print(f"Initialization attempt {attempt + 1} failed: {e}")
                 if attempt < self.max_retries - 1:
                     time.sleep(self.retry_delay)
                     continue
-                else:
-                    print("All initialization attempts failed")
-                    raise
+        
+        if last_error:
+            raise last_error
+        return False
 
     def _make_request(self, method, url, **kwargs):
         """Make HTTP request with retries"""
-        if not self.initialized and method != 'GET':
+        # Only check initialization for non-GET requests that are not part of initialization
+        if not self.initialized and method != 'GET' and not url.endswith('_index.json'):
             raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
             
         for attempt in range(self.max_retries):
@@ -90,9 +110,7 @@ class Database:
 
     def _get_headers(self):
         """Get headers for API requests"""
-        if not self.initialized and not self.blob_token:
-            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
-            
+        # Remove initialization check for headers
         headers = {
             "Authorization": f"Bearer {self.blob_token}",
             "Content-Type": "application/json"
@@ -113,9 +131,6 @@ class Database:
 
     def _ensure_users_index_exists(self):
         """Ensure the users index file exists in Blob storage."""
-        if not self.initialized:
-            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
-            
         try:
             print("\nChecking users index...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
