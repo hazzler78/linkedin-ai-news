@@ -172,7 +172,7 @@ Article to analyze:
             # Add our service promotion
             post_text += "-------------------\n"
             post_text += "🚀 Want AI-powered insights for your LinkedIn presence?\n"
-            post_text += "Check out our AI News Poster service: https://hazzler78.github.io/linkedin-ai-news/\n"
+            post_text += "Check out our AI News Poster service: https://linkedin-ai-news.vercel.app\n"
             post_text += "Stay ahead of the curve with automated, intelligent content curation.\n\n"
             
             # Add relevant hashtags
@@ -186,7 +186,7 @@ Article to analyze:
     def post_to_linkedin(self, content):
         """Post the formatted content to LinkedIn."""
         post_data = {
-            "author": f"urn:li:person:XxnmKJTOHu",  # Using the working LinkedIn ID
+            "author": f"urn:li:person:{self.linkedin_id}",  # Using the environment variable
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
