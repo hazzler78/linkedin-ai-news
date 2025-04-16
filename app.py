@@ -8,12 +8,20 @@ from datetime import datetime
 from database import Database
 from functools import wraps
 
-# Load environment variables
-load_dotenv()
+# Force reload environment variables
+print("\n=== Loading Environment Variables ===")
+if os.path.exists('.env'):
+    print("Found .env file, loading variables...")
+    load_dotenv(override=True)
+    blob_token = os.getenv('BLOB_READ_WRITE_TOKEN')
+    print(f"Loaded BLOB_READ_WRITE_TOKEN: {blob_token[:20]}...")
+else:
+    print("No .env file found, using system environment variables")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
 
+# Initialize database with environment variables
 db = Database()
 
 # Admin credentials (in production, use environment variables)
@@ -82,14 +90,30 @@ DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
+        print("\n=== Chat Endpoint ===")
         data = request.json
         user_message = data.get('message', '')
         email = data.get('email')
         
-        if not email or not db.user_exists(email):
+        print(f"Request data:")
+        print(f"- Email: {email}")
+        print(f"- Message length: {len(user_message)}")
+        print(f"- Headers: {dict(request.headers)}")
+        
+        if not email:
+            print("Error: No email provided")
+            return jsonify({'error': 'Please register first'}), 401
+        
+        print("\nChecking user existence...")
+        user_exists = db.user_exists(email)
+        print(f"User exists result: {user_exists}")
+        
+        if not user_exists:
+            print("Error: User not found")
             return jsonify({'error': 'Please register first'}), 401
         
         if not DEEPSEEK_API_KEY:
+            print("Error: DeepSeek API key not configured")
             return jsonify({'error': 'DeepSeek API key is not configured'}), 500
         
         # Prepare the prompt for Deepseek
