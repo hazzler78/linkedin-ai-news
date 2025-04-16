@@ -81,11 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add message to chat
     function addMessage(message, type) {
+        if (!message) {
+            console.error('Attempted to add undefined or null message');
+            message = "An error occurred while processing the message.";
+        }
+        
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type === 'bot' ? 'assistant' : type}`;
         
         // Convert URLs to clickable links
-        let content = message.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+        let content = message.toString().replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
         
         // Replace line breaks with <br> tags
         content = content.replace(/\n/g, '<br>');
@@ -187,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
             try {
-                const response = await fetch(`${BASE_URL}/api/chat`, {
+                const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -197,8 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         email: userEmail
                     })
                 });
-                
-                const data = await response.json();
                 
                 // Remove typing indicator
                 typingIndicator.remove();
@@ -213,15 +216,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (messageContainer) {
                         messageContainer.style.display = 'none';
                     }
-                } else if (data.error) {
-                    addMessage("I'm sorry, I'm having trouble processing your request. Please try again.", 'bot');
+                } else if (!data || !data.response) {
+                    console.error('Invalid response from server:', data);
+                    addMessage("I apologize, but I'm having trouble generating a response right now. Please try again in a moment.", 'bot');
                 } else {
                     addMessage(data.response, 'bot');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 typingIndicator.remove();
-                addMessage("I'm sorry, I'm having trouble connecting to the server. Please try again.", 'bot');
+                let errorMessage = "I'm sorry, but I encountered an error while processing your request.";
+                if (error.message.includes('DEEPSEEK_API_KEY')) {
+                    errorMessage = "The AI service is currently unavailable. Please try again later.";
+                } else if (error.message.includes('Database')) {
+                    errorMessage = "There seems to be an issue with the database. Please try again later.";
+                }
+                addMessage(errorMessage, 'bot');
             }
             
             isProcessing = false;
