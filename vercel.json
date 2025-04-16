@@ -41,5 +41,11 @@
         "FLASK_ENV": "production",
         "FLASK_APP": "vercel_app.py",
         "VERCEL_ENV": "production"
+    },
+    "git": {
+        "deploymentEnabled": {
+            "main": true,
+            "preview": true
+        }
     }
 } 

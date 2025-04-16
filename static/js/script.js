@@ -7,6 +7,17 @@ const BASE_URL = window.location.hostname === 'localhost' || window.location.hos
 console.log('Current hostname:', window.location.hostname);
 console.log('Using BASE_URL:', BASE_URL);
 
+// Function to handle API responses
+function handleApiResponse(response, errorMessage = 'An error occurred') {
+    if (response.status === 503) {
+        throw new Error('Database service is currently unavailable. Please check if the environment variables are properly set.');
+    }
+    if (!response.ok) {
+        throw new Error(`${errorMessage} (Status: ${response.status})`);
+    }
+    return response;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Chat toggle functionality
     const chatToggleButton = document.querySelector('.chat-toggle-button');
