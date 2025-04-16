@@ -170,106 +170,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Send message function
+    function showTypingIndicator() {
+        const messagesContainer = document.querySelector('.messages');
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = `
+            <span></span>
+            <span></span>
+            <span></span>
+        `;
+        messagesContainer.appendChild(typingIndicator);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const typingIndicator = document.querySelector('.typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
     async function sendMessage() {
+        const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
-        if (message && !isProcessing) {
-            isProcessing = true;
-            
-            // Get current user email
-            if (!userEmail) {
-                addMessage("Please register first to use the chat.", 'bot');
-                if (messageContainer) {
-                    messageContainer.style.display = 'none';
-                }
-                addRegistrationForm();
-                isProcessing = false;
-                return;
-            }
-            
-            // Add user message
-            addMessage(message, 'user');
-            messageInput.value = '';
-            
+        
+        if (!message) return;
+        
+        // Clear input and add user message
+        messageInput.value = '';
+        addMessage(message, 'user');
+        
+        try {
             // Show typing indicator
-            const typingIndicator = document.createElement('div');
-            typingIndicator.classList.add('typing-indicator');
-            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
-            chatMessages.appendChild(typingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            showTypingIndicator();
             
-            try {
-                console.log('Sending message:', message);
-                const response = await fetch(`${BASE_URL}/api/chat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        message: message,
-                        email: userEmail
-                    })
-                });
-                
-                // Remove typing indicator
-                typingIndicator.remove();
-                
-                // Get response text first
-                const responseText = await response.text();
-                console.log('Raw response:', responseText);
-                
-                // Try to parse as JSON
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                    console.log('Parsed response data:', data);
-                } catch (e) {
-                    console.error('Failed to parse response as JSON:', e);
-                    throw new Error('Invalid response format from server');
-                }
-                
-                if (response.status === 401) {
-                    // Clear email and show registration message
-                    localStorage.removeItem('userEmail');
-                    userEmail = null;
-                    chatMessages.innerHTML = ''; // Clear chat messages
-                    addRegistrationForm();
-                    addMessage("Your session has expired. Please register again to continue.", 'bot');
-                    if (messageContainer) {
-                        messageContainer.style.display = 'none';
-                    }
-                } else if (!data) {
-                    console.error('No data in response');
-                    addMessage("I apologize, but I'm having trouble generating a response right now. Please try again in a moment.", 'bot');
-                } else if (data.error) {
-                    console.error('Error from server:', data.error);
-                    if (data.error.includes('DeepSeek API')) {
-                        addMessage("I apologize, but the AI service is currently unavailable. Please try again later.", 'bot');
-                    } else {
-                        addMessage(data.error, 'bot');
-                    }
-                } else if (data.response) {
-                    console.log('Adding bot response:', data.response);
-                    addMessage(data.response, 'bot');
-                } else {
-                    console.error('Invalid response format:', data);
-                    addMessage("I apologize, but I received an invalid response format. Please try again.", 'bot');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                typingIndicator.remove();
-                let errorMessage = "I'm sorry, but I encountered an error while processing your request.";
-                if (error.message.includes('DEEPSEEK_API_KEY')) {
-                    errorMessage = "The AI service is currently unavailable. Please try again later.";
-                } else if (error.message.includes('Database')) {
-                    errorMessage = "There seems to be an issue with the database. Please try again later.";
-                } else if (error.message.includes('Invalid response format')) {
-                    errorMessage = "I received an invalid response from the server. Please try again.";
-                }
-                addMessage(errorMessage, 'bot');
-            } finally {
-                isProcessing = false;
+            const response = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+
+            // Remove typing indicator and add assistant's response
+            removeTypingIndicator();
+            
+            if (response && response.message) {
+                addMessage(response.message, 'assistant');
+            } else {
+                console.error('Invalid response format:', response);
+                addMessage("I apologize, but I encountered an error. Please try again.", 'assistant');
             }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            removeTypingIndicator();
+            addMessage("I apologize, but I encountered an error. Please try again.", 'assistant');
         }
     }
 
