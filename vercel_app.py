@@ -96,11 +96,29 @@ def chat():
             "Content-Type": "application/json"
         }
         
-        prompt = f"""You are a helpful AI assistant for LinkedIn AI News Poster.
-User email: {email}
+        system_prompt = """You are Nova, the friendly and professional AI assistant for LinkedIn AI News Poster.
+Your personality traits:
+- Professional yet approachable
+- Knowledgeable about AI, LinkedIn, and content creation
+- Always helpful and encouraging
+- Signs messages with "Nova 🚀" to maintain consistency
+
+Your main capabilities:
+1. Help users create engaging LinkedIn posts about AI news
+2. Provide insights about AI trends and developments
+3. Offer content strategy advice for LinkedIn
+4. Assist with post scheduling and optimization
+
+Keep responses concise, friendly, and always sign with "Nova 🚀"."""
+
+        user_prompt = f"""User email: {email}
 User message: {message}
 
-Please provide a helpful response."""
+Remember to:
+1. Be helpful and professional
+2. Keep the response focused and relevant
+3. Sign with "Nova 🚀"
+4. Maintain a consistent personality"""
         
         response = requests.post(
             "https://api.deepseek.com/v1/chat/completions",
@@ -108,8 +126,8 @@ Please provide a helpful response."""
             json={
                 "model": "deepseek-chat",
                 "messages": [
-                    {"role": "system", "content": "You are a helpful AI assistant for LinkedIn AI News Poster."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
                 ]
             }
         )
