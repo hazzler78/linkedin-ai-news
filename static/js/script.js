@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     console.log('Registration successful');
                     localStorage.setItem('userEmail', email);
+                    localStorage.setItem('userName', name);
                     userEmail = email;
                     registrationForm.remove();
                     addMessage('Registration successful! How can I help you today?', 'assistant');
@@ -166,7 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageContainer.style.display = 'none';
             }
         } else {
-            addMessage('Welcome back! How can I help you today?', 'bot');
+            const userName = localStorage.getItem('userName') || 'there';
+            addMessage(`Welcome back ${userName}! How can I help you today?`, 'assistant');
             if (messageContainer) {
                 messageContainer.style.display = 'flex';
             }
@@ -197,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
         let currentEmail = localStorage.getItem('userEmail');
+        let userName = localStorage.getItem('userName');
         
         if (!message) return;
         
@@ -216,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     email: currentEmail,
+                    name: userName,
                     message: message
                 })
             });
@@ -227,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error === 'Please register first') {
                     console.log('User needs to register, clearing localStorage and showing form');
                     localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userName');
                     userEmail = null;
                     // Clear existing messages
                     chatMessages.innerHTML = '';
@@ -247,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error.message.includes('Please register first')) {
                 console.log('Registration error detected, showing registration form');
                 localStorage.removeItem('userEmail');
+                localStorage.removeItem('userName');
                 userEmail = null;
                 // Clear existing messages
                 chatMessages.innerHTML = '';
