@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('reg-email').value;
 
             try {
+                console.log('Attempting registration with email:', email);
                 const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: {
@@ -138,14 +139,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
+                    console.log('Registration successful');
                     localStorage.setItem('userEmail', email);
                     userEmail = email;
                     registrationForm.remove();
-                    addMessage('Registration successful! How can I help you today?', 'bot');
+                    addMessage('Registration successful! How can I help you today?', 'assistant');
                     if (messageContainer) {
                         messageContainer.style.display = 'flex';
                     }
                 } else {
+                    console.error('Registration failed:', data.error);
                     alert(data.error || 'Registration failed. Please try again.');
                 }
             } catch (error) {
@@ -206,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             console.log('Sending message with email:', userEmail);
-            const response = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
+            const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -217,14 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             
-            const data = await response.json();
             removeTypingIndicator();
             
             if (data.error) {
                 addMessage(data.error, 'error');
                 if (data.error === 'Please register first') {
+                    console.log('User needs to register, clearing localStorage and showing form');
                     localStorage.removeItem('userEmail');
-                    showRegistrationForm();
+                    userEmail = null;
+                    // Clear existing messages
+                    chatMessages.innerHTML = '';
+                    // Show registration form
+                    addRegistrationForm();
+                    if (messageContainer) {
+                        messageContainer.style.display = 'none';
+                    }
                 }
             } else {
                 addMessage(data.response, 'assistant');
@@ -232,7 +242,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error sending message:', error);
             removeTypingIndicator();
-            addMessage('Sorry, there was an error processing your message. Please try again.', 'error');
+            
+            // Check if the error is a registration error
+            if (error.message.includes('Please register first')) {
+                console.log('Registration error detected, showing registration form');
+                localStorage.removeItem('userEmail');
+                userEmail = null;
+                // Clear existing messages
+                chatMessages.innerHTML = '';
+                // Show registration form
+                addRegistrationForm();
+                if (messageContainer) {
+                    messageContainer.style.display = 'none';
+                }
+            } else {
+                addMessage('Sorry, there was an error processing your message. Please try again.', 'error');
+            }
         }
     }
 
