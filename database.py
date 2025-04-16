@@ -10,13 +10,15 @@ class Database:
         print("\n=== Database Initialization ===")
         self.blob_api_url = "https://blob.vercel-storage.com"
         self.blob_token = os.getenv('BLOB_READ_WRITE_TOKEN')
-        self.store_id = self.blob_token.split('_')[3] if self.blob_token else None
         self.users_prefix = "users/"
         self.user_paths = {}  # Store the full paths of user files
+        self.store_id = None
         
         print(f"Environment: {os.getenv('VERCEL_ENV', 'development')}")
-        print(f"Blob Token: {self.blob_token[:20]}...")
-        print(f"Store ID: {self.store_id}")
+        if self.blob_token:
+            print(f"Blob Token: {self.blob_token[:20]}...")
+        else:
+            print("Blob Token: Missing")
         print(f"Blob API URL: {self.blob_api_url}")
         
         if not self.blob_token:
@@ -24,6 +26,10 @@ class Database:
             
         if not self.blob_token.startswith('vercel_blob_rw_'):
             raise ValueError("Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
+            
+        # Set store_id after validation
+        self.store_id = self.blob_token.split('_')[3]
+        print(f"Store ID: {self.store_id}")
         
         # Initialize users index if it doesn't exist
         self._ensure_users_index_exists()
