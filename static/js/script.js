@@ -3,33 +3,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatToggleButton = document.querySelector('.chat-toggle-button');
     const chatbotContainer = document.querySelector('.chatbot-container');
     const chatbotToggle = document.querySelector('.chatbot-toggle');
-    const chatMessages = document.querySelector('.chatbot-messages');
-    const chatInput = document.querySelector('.chatbot-input input');
+    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
     const sendButton = document.querySelector('.send-button');
-    const registrationForm = document.querySelector('.registration-form');
-    const chatInputContainer = document.querySelector('.chatbot-input');
-    const openChatButton = document.getElementById('openChat');
 
     let isProcessing = false;
     let userEmail = localStorage.getItem('userEmail');
 
-    // Hide chat input until registered
-    if (!userEmail) {
-        chatInputContainer.style.display = 'none';
-        chatMessages.style.display = 'none';
-    } else {
-        registrationForm.classList.add('hidden');
-        chatInputContainer.style.display = 'flex';
-        chatMessages.style.display = 'flex';
-    }
-
     function toggleChat() {
         chatbotContainer.classList.toggle('active');
-        chatToggleButton.classList.toggle('hidden');
+        if (chatToggleButton) {
+            chatToggleButton.classList.toggle('hidden');
+        }
     }
 
-    chatToggleButton.addEventListener('click', toggleChat);
-    chatbotToggle.addEventListener('click', toggleChat);
+    if (chatToggleButton) {
+        chatToggleButton.addEventListener('click', toggleChat);
+    }
+    if (chatbotToggle) {
+        chatbotToggle.addEventListener('click', toggleChat);
+    }
+
+    const openChatButton = document.getElementById('openChat');
     if (openChatButton) {
         openChatButton.addEventListener('click', (e) => {
             e.preventDefault();
@@ -39,15 +34,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Add registration form HTML dynamically
+    // Add message to chat
+    function addMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type === 'bot' ? 'assistant' : type}`;
+        
+        // Convert URLs to clickable links
+        let content = message.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+        
+        // Replace line breaks with <br> tags
+        content = content.replace(/\n/g, '<br>');
+        
+        messageDiv.innerHTML = content;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Add registration form
     function addRegistrationForm() {
-        const chatMessages = document.getElementById('chat-messages');
         const registrationForm = document.createElement('div');
         registrationForm.className = 'registration-form';
         registrationForm.innerHTML = `
             <h3>Welcome to LinkedIn AI News Poster</h3>
             <p>Please register to start chatting:</p>
-            <form id="registration-form">
+            <form id="chat-registration-form">
                 <input type="text" id="reg-name" placeholder="Your Name" required>
                 <input type="email" id="reg-email" placeholder="Your Email" required>
                 <button type="submit">Register</button>
@@ -56,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.appendChild(registrationForm);
 
         // Handle registration form submission
-        document.getElementById('registration-form').addEventListener('submit', async (e) => {
+        document.getElementById('chat-registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('reg-name').value;
             const email = document.getElementById('reg-email').value;
@@ -76,10 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     userEmail = email;
                     registrationForm.remove();
                     addMessage('Registration successful! How can I help you today?', 'bot');
+                    // Show message input after successful registration
+                    const messageContainer = document.querySelector('.message-container');
+                    if (messageContainer) {
+                        messageContainer.style.display = 'flex';
+                    }
                 } else {
                     alert(data.error || 'Registration failed. Please try again.');
                 }
             } catch (error) {
+                console.error('Registration error:', error);
                 alert('Error during registration. Please try again.');
             }
         });
@@ -89,18 +105,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeChat() {
         if (!userEmail) {
             addRegistrationForm();
+            // Hide message input until registered
+            const messageContainer = document.querySelector('.message-container');
+            if (messageContainer) {
+                messageContainer.style.display = 'none';
+            }
         } else {
             addMessage('Welcome back! How can I help you today?', 'bot');
         }
     }
 
-    // Update sendMessage function
+    // Send message function
     async function sendMessage() {
-        if (isProcessing) return;
+        if (isProcessing || !messageInput) return;
         
-        const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
-        
         if (!message) return;
         
         if (!userEmail) {
@@ -116,9 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add typing indicator
         const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'message bot typing';
+        typingIndicator.className = 'message typing';
         typingIndicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        document.getElementById('chat-messages').appendChild(typingIndicator);
+        chatMessages.appendChild(typingIndicator);
 
         try {
             const response = await fetch('/api/chat', {
@@ -144,11 +163,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     userEmail = null;
                     addRegistrationForm();
                     addMessage('Your session has expired. Please register again.', 'bot');
+                    // Hide message input
+                    const messageContainer = document.querySelector('.message-container');
+                    if (messageContainer) {
+                        messageContainer.style.display = 'none';
+                    }
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
                 }
             }
         } catch (error) {
+            console.error('Chat error:', error);
             typingIndicator.remove();
             addMessage('Sorry, I encountered an error. Please try again later.', 'bot');
         }
@@ -156,36 +181,23 @@ document.addEventListener('DOMContentLoaded', () => {
         isProcessing = false;
     }
 
-    function addMessage(type, content) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}-message`;
-        
-        // Convert URLs to clickable links
-        content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-        
-        // Replace line breaks with <br> tags
-        content = content.replace(/\n/g, '<br>');
-        
-        messageDiv.innerHTML = content;
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Event listeners for sending messages
+    if (sendButton && messageInput) {
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
     }
 
-    // Event listeners for sending messages
-    sendButton.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Initialize chat when the page loads
+    // Initialize chat
     initializeChat();
 });
 
 // Newsletter form submission
-const newsletterForm = document.querySelector('.newsletter form');
+const newsletterForm = document.getElementById('newsletter-form');
 if (newsletterForm) {
     newsletterForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -195,11 +207,11 @@ if (newsletterForm) {
 }
 
 // Contact form submission
-const contactForm = document.querySelector('.contact form');
+const contactForm = document.getElementById('contact-form');
 if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        alert('Thank you for your message. We\'ll get back to you soon!');
+        alert('Thank you for your message! We will get back to you soon.');
         contactForm.reset();
     });
 } 
