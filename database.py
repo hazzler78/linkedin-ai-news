@@ -89,7 +89,7 @@ class Database:
     def _make_request(self, method, url, **kwargs):
         """Make HTTP request with retries"""
         # Only check initialization for non-GET requests that are not part of initialization
-        if not self.initialized and method != 'GET' and not url.endswith('_index.json'):
+        if not self.initialized and method != 'GET' and not (url.endswith('_index.json') or '_index.json' in url):
             raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
             
         for attempt in range(self.max_retries):
@@ -110,7 +110,6 @@ class Database:
 
     def _get_headers(self):
         """Get headers for API requests"""
-        # Remove initialization check for headers
         headers = {
             "Authorization": f"Bearer {self.blob_token}",
             "Content-Type": "application/json"
@@ -172,9 +171,6 @@ class Database:
 
     def _load_user_paths(self):
         """Load existing user paths from the index"""
-        if not self.initialized:
-            raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
-            
         try:
             print("\nLoading user paths...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
