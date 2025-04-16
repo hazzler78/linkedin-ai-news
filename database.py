@@ -4,15 +4,18 @@ import json
 import requests
 from typing import Optional, List, Dict
 import urllib.parse
+import time
 
 class Database:
-    def __init__(self):
+    def __init__(self, max_retries=3, retry_delay=1):
         print("\n=== Database Initialization ===")
         self.blob_api_url = "https://blob.vercel-storage.com"
         self.blob_token = os.getenv('BLOB_READ_WRITE_TOKEN')
         self.users_prefix = "users/"
         self.user_paths = {}  # Store the full paths of user files
         self.store_id = None
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
         
         print(f"Environment: {os.getenv('VERCEL_ENV', 'development')}")
         if self.blob_token:
@@ -31,11 +34,44 @@ class Database:
         self.store_id = self.blob_token.split('_')[3]
         print(f"Store ID: {self.store_id}")
         
-        # Initialize users index if it doesn't exist
-        self._ensure_users_index_exists()
-        
-        # Load existing user paths
-        self._load_user_paths()
+        # Initialize with retries
+        self._initialize_with_retries()
+
+    def _initialize_with_retries(self):
+        """Initialize database with retries for serverless environment"""
+        for attempt in range(self.max_retries):
+            try:
+                # Initialize users index if it doesn't exist
+                if self._ensure_users_index_exists():
+                    # Load existing user paths
+                    self._load_user_paths()
+                    return True
+            except Exception as e:
+                print(f"Initialization attempt {attempt + 1} failed: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay)
+                    continue
+                else:
+                    print("All initialization attempts failed")
+                    raise
+
+    def _make_request(self, method, url, **kwargs):
+        """Make HTTP request with retries"""
+        for attempt in range(self.max_retries):
+            try:
+                response = requests.request(
+                    method,
+                    url,
+                    timeout=10,  # Increased timeout
+                    **kwargs
+                )
+                return response
+            except requests.exceptions.RequestException as e:
+                print(f"Request attempt {attempt + 1} failed: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay)
+                    continue
+                raise
 
     def _get_headers(self):
         headers = {
@@ -61,48 +97,45 @@ class Database:
             print(f"Index URL: {index_url}")
             
             headers = self._get_headers()
-            response = requests.get(
-                index_url,
-                headers=headers,
-                timeout=5
-            )
+            response = self._make_request('GET', index_url, headers=headers)
             
             print(f"Index check response: {response.status_code}")
             
             if response.status_code == 404:
                 print("Creating users index...")
-                response = requests.put(
+                response = self._make_request(
+                    'PUT',
                     index_url,
                     headers=headers,
-                    json={"emails": []},
-                    timeout=5
+                    json={"emails": [], "paths": {}}
                 )
                 print(f"Index creation response: {response.status_code}")
                 if response.status_code == 200:
                     print("Users index created successfully")
+                    return True
                 else:
                     print(f"Failed to create users index: {response.status_code}")
                     print(f"Response: {response.text}")
+                    return False
             elif response.status_code == 200:
                 print("Users index exists")
                 print(f"Current index: {response.text}")
+                return True
             else:
                 print(f"Error checking users index: {response.status_code}")
                 print(f"Response: {response.text}")
+                return False
                 
         except Exception as e:
             print(f"Error ensuring users index exists: {e}")
+            return False
 
     def _load_user_paths(self):
         """Load existing user paths from the index"""
         try:
             print("\nLoading user paths...")
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
-            response = requests.get(
-                index_url,
-                headers=self._get_headers(),
-                timeout=5
-            )
+            response = self._make_request('GET', index_url, headers=self._get_headers())
             
             if response.status_code == 200:
                 index_data = response.json()
@@ -136,13 +169,13 @@ class Database:
                 'paths': self.user_paths
             }
             
-            # Update index
+            # Update index with retries
             print("Saving updated index...")
-            response = requests.put(
+            response = self._make_request(
+                'PUT',
                 index_url,
                 headers=self._get_headers(),
-                json=index_data,
-                timeout=5
+                json=index_data
             )
             
             print(f"Save index response: {response.status_code}")
@@ -174,17 +207,17 @@ class Database:
                 'created_at': datetime.now().isoformat()
             }
             
-            # Save to Vercel Blob
+            # Save to Vercel Blob with retries
             print("Saving user data...")
             encoded_email = self._encode_email(email)
             user_url = f"{self.blob_api_url}/{self.users_prefix}{encoded_email}.json"
             print(f"User URL: {user_url}")
             
-            response = requests.put(
+            response = self._make_request(
+                'PUT',
                 user_url,
                 headers=self._get_headers(),
-                json=user_data,
-                timeout=10
+                json=user_data
             )
             
             print(f"Save user response: {response.status_code}")
@@ -223,8 +256,8 @@ class Database:
                 file_url = self.user_paths[email]
                 print(f"Found stored path: {file_url}")
                 
-                # Try to access the file
-                response = requests.get(file_url, timeout=5)
+                # Try to access the file with retries
+                response = self._make_request('GET', file_url)
                 print(f"User check response: {response.status_code}")
                 
                 if response.status_code == 200:
@@ -233,11 +266,7 @@ class Database:
             
             # If no stored path or file not found, check the index
             index_url = f"{self.blob_api_url}/{self.users_prefix}_index.json"
-            response = requests.get(
-                index_url,
-                headers=self._get_headers(),
-                timeout=5
-            )
+            response = self._make_request('GET', index_url, headers=self._get_headers())
             
             if response.status_code == 200:
                 try:
@@ -258,10 +287,10 @@ class Database:
     def get_user_by_email(self, email: str) -> Optional[Dict]:
         """Get user information from Vercel Blob Storage."""
         try:
-            response = requests.get(
+            response = self._make_request(
+                'GET',
                 f"{self.blob_api_url}/{self.users_prefix}{email}.json",
-                headers=self._get_headers(),
-                timeout=5
+                headers=self._get_headers()
             )
             
             if response.status_code == 200:
@@ -277,11 +306,11 @@ class Database:
     def get_all_users(self) -> List[Dict]:
         """Get all users from Vercel Blob Storage."""
         try:
-            # Get users index
-            response = requests.get(
+            # Get users index with retries
+            response = self._make_request(
+                'GET',
                 f"{self.blob_api_url}/{self.users_prefix}_index.json",
-                headers=self._get_headers(),
-                timeout=5
+                headers=self._get_headers()
             )
             
             if response.status_code == 200:
