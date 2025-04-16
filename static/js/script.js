@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendMessage() {
         const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
-        const userEmail = localStorage.getItem('userEmail');
+        let currentEmail = localStorage.getItem('userEmail');
         
         if (!message) return;
         
@@ -208,14 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showTypingIndicator();
         
         try {
-            console.log('Sending message with email:', userEmail);
+            console.log('Sending message with email:', currentEmail);
             const { response, data } = await handleFetchWithRetry(`${BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    email: userEmail,
+                    email: currentEmail,
                     message: message
                 })
             });
