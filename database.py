@@ -23,27 +23,31 @@ class Database:
             print(f"Blob Token: {self.blob_token[:20]}...")
         else:
             print("Blob Token: Missing")
+            return
+            
         print(f"Blob API URL: {self.blob_api_url}")
         
         # Try to initialize if token is available
-        if self.blob_token:
-            if not self.blob_token.startswith('vercel_blob_rw_'):
-                print("Warning: Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
-                return
-                
-            # Set store_id after validation
+        if not self.blob_token.startswith('vercel_blob_rw_'):
+            print("Warning: Invalid Blob token format. Token should start with 'vercel_blob_rw_'")
+            return
+            
+        # Set store_id after validation
+        try:
             self.store_id = self.blob_token.split('_')[3]
             print(f"Store ID: {self.store_id}")
+        except IndexError:
+            print("Warning: Invalid Blob token format. Could not extract store ID.")
+            return
             
-            # Initialize with retries
-            try:
-                self._initialize_with_retries()
-                self.initialized = True
-            except Exception as e:
-                print(f"Failed to initialize database: {e}")
-                self.initialized = False
-        else:
-            print("Warning: BLOB_READ_WRITE_TOKEN environment variable is missing. Database operations will be limited.")
+        # Initialize with retries
+        try:
+            self._initialize_with_retries()
+            self.initialized = True
+            print("Database initialized successfully")
+        except Exception as e:
+            print(f"Failed to initialize database: {e}")
+            self.initialized = False
 
     def _initialize_with_retries(self):
         """Initialize database with retries for serverless environment"""
@@ -65,7 +69,7 @@ class Database:
 
     def _make_request(self, method, url, **kwargs):
         """Make HTTP request with retries"""
-        if not self.initialized:
+        if not self.initialized and method != 'GET':
             raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
             
         for attempt in range(self.max_retries):
@@ -86,7 +90,7 @@ class Database:
 
     def _get_headers(self):
         """Get headers for API requests"""
-        if not self.initialized:
+        if not self.initialized and not self.blob_token:
             raise ValueError("Database not initialized. BLOB_READ_WRITE_TOKEN is required.")
             
         headers = {
